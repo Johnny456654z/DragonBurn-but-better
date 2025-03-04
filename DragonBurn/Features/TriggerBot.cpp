@@ -34,7 +34,8 @@ void TriggerBot::Run(const CEntity& LocalEntity)
     if (!Entity.UpdatePawn(PawnAddress))
         return;
 
-    if (!CheckWeapon(LocalEntity))
+    std::string curWeapon = GetWeapon(LocalEntity);
+    if (!CheckWeapon(curWeapon))
         return;
 
     if (!IgnoreFlash && LocalEntity.Pawn.FlashDuration > 0.f)
@@ -44,10 +45,9 @@ void TriggerBot::Run(const CEntity& LocalEntity)
     {
         bool isScoped;
         memoryManager.ReadMemory<bool>(LocalEntity.Pawn.Address + Offset.Pawn.isScoped, isScoped);
-        if (!isScoped and CheckScopeWeapon(LocalEntity))
-        {
+        
+        if (!isScoped and CheckScopeWeapon(curWeapon))
             return;
-        }
     }
 
     if (MenuConfig::TeamCheck)
@@ -81,14 +81,14 @@ void TriggerBot::Run(const CEntity& LocalEntity)
     }
 }
 
-bool TriggerBot::CheckScopeWeapon(const CEntity& LocalEntity)
+std::string TriggerBot::GetWeapon(const CEntity& LocalEntity)
 {
     DWORD64 WeaponNameAddress = 0;
     char Buffer[256]{};
 
     WeaponNameAddress = memoryManager.TraceAddress(LocalEntity.Pawn.Address + Offset.Pawn.pClippingWeapon, { 0x10,0x20 ,0x0 });
     if (WeaponNameAddress == 0)
-        return false;
+        return "";
 
     DWORD64 CurrentWeapon;
     short weaponIndex;
@@ -96,65 +96,23 @@ bool TriggerBot::CheckScopeWeapon(const CEntity& LocalEntity)
     memoryManager.ReadMemory(CurrentWeapon + Offset.EconEntity.AttributeManager + Offset.WeaponBaseData.Item + Offset.WeaponBaseData.ItemDefinitionIndex, weaponIndex);
 
     if (weaponIndex == -1)
-        return false;
+        return "";
 
-    std::string WeaponName = CEntity::GetWeaponName(weaponIndex);
+    return CEntity::GetWeaponName(weaponIndex);
+}
+
+bool TriggerBot::CheckScopeWeapon(const std::string& WeaponName)
+{
     if (WeaponName == "awp" || WeaponName == "g3Sg1" || WeaponName == "ssg08" || WeaponName == "scar20")
         return true;
     else
         return false;
 }
 
-bool TriggerBot::CheckWeapon(const CEntity& LocalEntity)
+bool TriggerBot::CheckWeapon(const std::string& WeaponName)
 {
-    DWORD64 WeaponNameAddress = 0;
-    char Buffer[256]{};
-
-    WeaponNameAddress = memoryManager.TraceAddress(LocalEntity.Pawn.Address + Offset.Pawn.pClippingWeapon, { 0x10,0x20 ,0x0 });
-    if (WeaponNameAddress == 0)
-        return false;
-
-    DWORD64 CurrentWeapon;
-    short weaponIndex;
-    memoryManager.ReadMemory(LocalEntity.Pawn.Address + Offset.Pawn.pClippingWeapon, CurrentWeapon);
-    memoryManager.ReadMemory(CurrentWeapon + Offset.EconEntity.AttributeManager + Offset.WeaponBaseData.Item + Offset.WeaponBaseData.ItemDefinitionIndex, weaponIndex);
-
-    if (weaponIndex == -1)
-        return false;
-
-    std::string WeaponName = CEntity::GetWeaponName(weaponIndex);
     if (WeaponName == "smokegrenade" || WeaponName == "flashbang" || WeaponName == "hegrenade" || WeaponName == "molotov" || WeaponName == "decoy" || WeaponName == "incgrenade" || WeaponName == "t_knife" || WeaponName == "ct_knife" || WeaponName == "c4")
         return false;
     else
         return true;
 }
-
-//void TriggerBot::TargetCheck(const CEntity& LocalEntity) noexcept {
-//    if (!memoryManager.ReadMemory<DWORD>(LocalEntity.Pawn.Address + Offset.Pawn.iIDEntIndex, uHandle) || uHandle == -1) {
-//        //CrosshairsCFG::isAim = false;
-//        return;
-//    }
-//
-//    const unsigned long long ENTITY_OFFSET = 0x78;
-//    const unsigned long long ENTITY_INDEX_MASK = 0x1FF;
-//
-//    DWORD64 ListEntry = memoryManager.TraceAddress(gGame.GetEntityListAddress(), { 0x8 * (uHandle >> 9) + 0x10, 0x0 });
-//    if (ListEntry == 0) {
-//        //CrosshairsCFG::isAim = false;
-//        return;
-//    }
-//
-//    DWORD64 PawnAddress;
-//    const DWORD64 ENTITY_ADDRESS_OFFSET = ENTITY_OFFSET * (uHandle & ENTITY_INDEX_MASK);
-//    if (!memoryManager.ReadMemory<DWORD64>(ListEntry + ENTITY_ADDRESS_OFFSET, PawnAddress)) {
-//        //CrosshairsCFG::isAim = false;
-//        return;
-//    }
-//
-//    if (!Entity.UpdatePawn(PawnAddress)) {
-//        //CrosshairsCFG::isAim = false;
-//        return;
-//    }
-//
-//   // CrosshairsCFG::isAim = CrosshairsCFG::TeamCheck ? (LocalEntity.Pawn.TeamID != Entity.Pawn.TeamID) : true;
-//}

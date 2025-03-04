@@ -345,7 +345,8 @@ void RenderCrosshair(ImDrawList* drawList, const CEntity& LocalEntity)
 	bool isScoped;
 	memoryManager.ReadMemory<bool>(LocalEntity.Pawn.Address + Offset.Pawn.isScoped, isScoped);
 
-	if (!MiscCFG::SniperCrosshair || LocalEntity.Controller.TeamID == 0 || !TriggerBot::CheckScopeWeapon(LocalEntity) || isScoped || MenuConfig::ShowMenu)
+	std::string curWeapon = TriggerBot::GetWeapon(LocalEntity);
+	if (!MiscCFG::SniperCrosshair || LocalEntity.Controller.TeamID == 0 || !TriggerBot::CheckScopeWeapon(curWeapon) || isScoped || MenuConfig::ShowMenu)
 		return;
 
 	Render::DrawCrossHair(drawList, ImVec2(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y / 2), MiscCFG::SniperCrosshairColor);

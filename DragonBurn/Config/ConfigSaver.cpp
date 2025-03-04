@@ -160,6 +160,7 @@ namespace MyConfigSaver
         ConfigData["Aimbot"]["VisibleCheck"]=     LegitBotConfig::VisibleCheck;
         ConfigData["Aimbot"]["IgnoreFlash"]=      AimControl::IgnoreFlash;
         ConfigData["Aimbot"]["ScopeOnly"]=        AimControl::ScopeOnly;
+        ConfigData["Aimbot"]["OnlyAuto"] =        AimControl::onlyAuto;
 
         ConfigData["Aimbot"]["CircleColor"]["r"]= LegitBotConfig::FovCircleColor.Value.x;
         ConfigData["Aimbot"]["CircleColor"]["g"]= LegitBotConfig::FovCircleColor.Value.y;
@@ -387,6 +388,7 @@ namespace MyConfigSaver
             LegitBotConfig::VisibleCheck = ReadData(ConfigData["Aimbot"],{"VisibleCheck"}, true);
             AimControl::IgnoreFlash = ReadData(ConfigData["Aimbot"],{"IgnoreFlash"}, false);
             AimControl::ScopeOnly = ReadData(ConfigData["Aimbot"],{"ScopeOnly"}, false);
+            AimControl::onlyAuto = ReadData(ConfigData["Aimbot"], { "OnlyAuto" }, true);
             Text::Aimbot::HotKey = KeyMgr::GetKeyName(AimControl::HotKey);
             LegitBotConfig::HitboxUpdated = false;
         }
