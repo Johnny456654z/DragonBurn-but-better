@@ -13,11 +13,23 @@
 inline std::chrono::time_point<std::chrono::system_clock> timepoint = std::chrono::system_clock::now();
 inline bool keyWasPressed = false;
 
-inline std::string WStringToString(const std::wstring& wstr) {
+inline std::string WStringToString(const std::wstring& wstr)
+{
     int bufferSize = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
     std::vector<char> buffer(bufferSize);
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, buffer.data(), bufferSize, NULL, NULL);
     return std::string(buffer.data());
+}
+
+inline std::vector<std::string> SplitString(const std::string& str, char delimiter) 
+{
+    std::vector<std::string> tokens;
+    std::istringstream stream(str);
+    std::string token;
+    while (std::getline(stream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 
 namespace Init
@@ -63,18 +75,19 @@ namespace Init
         static int CheckCheatVersion()
         {
             const std::string curVersionUrl = "https://raw.githubusercontent.com/ByteCorum/DragonBurn/data/version";
-            std::string curVersion;
+            std::string curVersions;
 
             if (!Web::CheckConnection())
                 return 0;
-            if (!Web::Get(curVersionUrl, curVersion))
+            if (!Web::Get(curVersionUrl, curVersions))
                 return 1;
-            if (curVersion != MenuConfig::version)
-            {
-                return 2;
-            }
 
-            return 3;
+            std::vector<std::string> supportedVersions = SplitString(curVersions, ';');
+
+            if (std::find(supportedVersions.begin(), supportedVersions.end(), MenuConfig::version) != supportedVersions.end())
+                return 3;
+
+            return 2;
         }
 	};
 
