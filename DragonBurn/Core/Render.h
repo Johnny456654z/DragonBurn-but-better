@@ -4,6 +4,7 @@
 #include <chrono>
 #include <map>
 #include <Windows.h>
+#include <unordered_map>
 #include "../Game/Entity.h"
 #include "../Helpers/Format.h"
 #include "../OS-ImGui/imgui/imgui.h"
@@ -14,275 +15,262 @@
 namespace Render
 {
 
-	void DrawHeadCircle(const CEntity& Entity, ImColor Color)
+	inline void DrawHeadCircle(const CEntity& Entity, ImColor Color)
 	{
 		if (!ESPConfig::ShowHeadBox)
 			return;
 
-		Vec2 CenterPos;
-		Vec3 Temp;
-		BoneJointPos Head = Entity.GetBone().BonePosList[BONEINDEX::head];
-		BoneJointPos Neck = Entity.GetBone().BonePosList[BONEINDEX::neck_0];
+		const auto& BoneList = Entity.GetBone().BonePosList;
+		if (BoneList.empty()) return;
 
-		CenterPos = Head.ScreenPos;
-		float Radius = abs(Head.ScreenPos.y - Neck.ScreenPos.y) + 2;
+		const BoneJointPos& Head = BoneList[BONEINDEX::head];
+		const BoneJointPos& Neck = BoneList[BONEINDEX::neck_0];
 
-		Gui.Circle(CenterPos, Radius, Color, 1.2);
-
+		Gui.Circle(Head.ScreenPos, std::abs(Head.ScreenPos.y - Neck.ScreenPos.y) + 2.0f, Color, 1.2f);
 	}
 
-	void DrawHealth(int Health, ImVec2 Pos)
+
+	inline void DrawHealth(int Health, const ImVec2& Pos)
 	{
 		if (!ESPConfig::ShowHealthNum)
 			return;
 
-		std::string health_str = Format("%i", Health);
+		char health_str[4];
+		snprintf(health_str, sizeof(health_str), "%d", Health);
+
 		Gui.StrokeText(health_str, Pos, ImColor(0, 220, 0, 255), 12, false);
 	}
 
-	void DrawDistance(const CEntity& LocalEntity, CEntity& Entity, ImVec4 Rect)
+
+	inline void DrawDistance(const CEntity& LocalEntity, CEntity& Entity, ImVec4 Rect)
 	{
 		if (!ESPConfig::ShowDistance)
 			return;
 
-		int distance = static_cast<int>(Entity.Pawn.Pos.DistanceTo(LocalEntity.Pawn.Pos) / 100);
-		std::string dis_str = Format("%im", distance);
-		Gui.StrokeText(dis_str, { Rect.x + Rect.z + 4, Rect.y }, ImColor(0, 98, 98, 255) , 14, false);
+		int distance = static_cast<int>(Entity.Pawn.Pos.DistanceTo(LocalEntity.Pawn.Pos)) / 100;
+		std::string dis_str = std::to_string(distance) + "m";
+
+		Gui.StrokeText(dis_str, { Rect.x + Rect.z + 4, Rect.y }, ImColor(0, 98, 98, 255), 14, false);
+
 	}
 
-	void DrawFovCircle(const CEntity& LocalEntity)
+	inline void DrawFovCircle(const CEntity& LocalEntity)
 	{
 		if (!ESPConfig::DrawFov)
 			return;
 
+		constexpr float DEG_TO_RAD = M_PI / 180.f;
 		Vec2 CenterPoint = Gui.Window.Size / 2;
-		float Radius = tan(AimControl::AimFov / 180.f * M_PI / 2.f) / tan(LocalEntity.Pawn.Fov / 180.f * M_PI / 2.f) * Gui.Window.Size.x / 2.f;
-		float MinRadius = tan(AimControl::AimFovMin / 180.f * M_PI / 2.f) / tan(LocalEntity.Pawn.Fov / 180.f * M_PI / 2.f) * Gui.Window.Size.x / 2.f;
+		float HalfWindowSize = Gui.Window.Size.x / 2.f;
+
+		float LocalFovTan = tan(LocalEntity.Pawn.Fov * DEG_TO_RAD / 2.f);
+		float AimFovTan = tan(AimControl::AimFov * DEG_TO_RAD / 2.f);
+		float AimFovMinTan = tan(AimControl::AimFovMin * DEG_TO_RAD / 2.f);
+
+		float Radius = (AimFovTan / LocalFovTan) * HalfWindowSize;
 		Gui.Circle(CenterPoint, Radius, LegitBotConfig::FovCircleColor, 1);
-		Gui.Circle(CenterPoint, MinRadius, LegitBotConfig::FovCircleColor, 1);
+
+		if (AimControl::AimFovMin > 0)
+		{
+			float MinRadius = (AimFovMinTan / LocalFovTan) * HalfWindowSize;
+			Gui.Circle(CenterPoint, MinRadius, LegitBotConfig::FovCircleColor, 1);
+		}
 	}
 
-	void DrawCrossHair(ImDrawList* drawList, const ImVec2& pos, ImColor color) noexcept
+	inline void DrawCrossHair(ImDrawList* drawList, const ImVec2& pos, ImColor color) noexcept
 	{
-		//int BorderWidth = 2;
-		//ImColor color = ImColor(32, 178, 170, 255);
-		int DotSize = 1;
-		float gap = 0.1;//CrosshairsCFG::Gap / 2;
+		constexpr float gap = 0.1f;
+		constexpr int size = 6;
+		constexpr float thickness = 1.1f;
 
-		int size = 6;
-		int outlineGap = gap - 1;
-		float Thickness = 1.1f;//CrosshairsCFG::Thickness;
+		float left = pos.x - (gap + size);
+		float right = pos.x + (gap + 1 + size);
+		float top = pos.y - (gap + size);
+		float bottom = pos.y + (gap + 1 + size);
 
-		//ImVec2 offset1{ CrosshairsCFG::DotSize,CrosshairsCFG::DotSize };
-		//ImVec2 offset2{ CrosshairsCFG::DotSize + 1,CrosshairsCFG::DotSize + 1 };
+		float xMin = pos.x - thickness + 1;
+		float xMax = pos.x + thickness;
+		float yMin = pos.y - thickness + 1;
+		float yMax = pos.y + thickness;
 
-		/*
-		===== Outline =====
-		*/
-		//if (CrosshairsCFG::drawOutLine)
-		//{
-		//	//dot
-		//	if (CrosshairsCFG::drawDot)
-		//		drawList->AddRectFilled(ImVec2(pos.x - offset1.x, pos.y - offset1.y), ImVec2(pos.x + offset2.x, pos.y + offset2.y), color & IM_COL32_A_MASK);
-
-		//	if (CrosshairsCFG::drawCrossline)
-		//	{
-		//		//left
-		//		drawList->AddRectFilled(ImVec2(pos.x - (outlineGap + BorderWidth + CrosshairsCFG::HorizontalLength), pos.y - Thickness), ImVec2(pos.x - outlineGap, pos.y + 1 + Thickness), color & IM_COL32_A_MASK);
-		//		//right
-		//		drawList->AddRectFilled(ImVec2(pos.x + (outlineGap + DotSize), pos.y - Thickness), ImVec2(pos.x + (outlineGap + DotSize + BorderWidth + CrosshairsCFG::HorizontalLength), pos.y + 1 + Thickness), color & IM_COL32_A_MASK);
-		//		//top
-		//		if (!CrosshairsCFG::tStyle)
-		//			drawList->AddRectFilled(ImVec2(pos.x - Thickness, pos.y - (outlineGap + BorderWidth + CrosshairsCFG::VerticalLength)), ImVec2(pos.x + 1 + Thickness, pos.y - outlineGap), color & IM_COL32_A_MASK);
-		//		//bottom
-		//		drawList->AddRectFilled(ImVec2(pos.x - Thickness, pos.y + outlineGap + DotSize), ImVec2(pos.x + 1 + Thickness, pos.y + (outlineGap + DotSize + BorderWidth + CrosshairsCFG::VerticalLength)), color & IM_COL32_A_MASK);
-		//	}
-
-		//	//circle
-		//	if (CrosshairsCFG::drawCircle)
-		//		drawList->AddCircle(ImVec2(pos.x, pos.y), CrosshairsCFG::CircleRadius, color & IM_COL32_A_MASK, 0, 3.0f);
-		//}
-
-		/*
-		===== Crosshair =====
-		*/
-		// dot
-		//if (CrosshairsCFG::drawDot)
-		//	drawList->AddRectFilled(ImVec2(pos.x - offset1.x + DotSize, pos.y - offset1.y + DotSize), ImVec2(pos.x + offset1.x, pos.y + offset1.y), color);
-
-		//if (CrosshairsCFG::drawCrossline)
-		//{
-			// left
-			drawList->AddRectFilled(ImVec2(pos.x - (gap + size/*CrosshairsCFG::HorizontalLength*/), pos.y - Thickness + 1), ImVec2(pos.x - gap, pos.y + Thickness), color);
-			// right
-			drawList->AddRectFilled(ImVec2(pos.x + gap + DotSize, pos.y - Thickness + 1), ImVec2(pos.x + (gap + DotSize + size/*CrosshairsCFG::HorizontalLength*/), pos.y + Thickness), color);
-			// top
-			//if (!CrosshairsCFG::tStyle)
-				drawList->AddRectFilled(ImVec2(pos.x - Thickness + 1, pos.y - (gap + size/*XCrosshairsCFG::VerticalLength*/)), ImVec2(pos.x + Thickness, pos.y - gap), color);
-			// bottom
-			drawList->AddRectFilled(ImVec2(pos.x - Thickness + 1, pos.y + gap + DotSize), ImVec2(pos.x + Thickness, pos.y + (gap + DotSize + size/*XCrosshairsCFG::VerticalLength*/)), color);
-		//}
-
-		// circle
-		//if (CrosshairsCFG::drawCircle)
-		//	drawList->AddCircle(ImVec2(pos.x, pos.y), CrosshairsCFG::CircleRadius, color, 0, 1.0f);
+		drawList->AddRectFilled(ImVec2(left, yMin), ImVec2(pos.x - gap, yMax), color);  // Left
+		drawList->AddRectFilled(ImVec2(pos.x + gap + 1, yMin), ImVec2(right, yMax), color); // Right
+		drawList->AddRectFilled(ImVec2(xMin, top), ImVec2(xMax, pos.y - gap), color);  // Top
+		drawList->AddRectFilled(ImVec2(xMin, pos.y + gap + 1), ImVec2(xMax, bottom), color); // Bottom
 	}
 
-	void LineToEnemy(ImVec4 Rect, ImColor Color, float Thickness)
+	inline void LineToEnemy(ImVec4 Rect, ImColor Color, float Thickness)
 	{
 		if (!ESPConfig::ShowLineToEnemy)
 			return;
 
+		const float CenterX = Gui.Window.Size.x * 0.5f;
+		const float CenterY = Gui.Window.Size.y * 0.5f;
+		const float StartX = Rect.x + Rect.z * 0.5f;
+		float StartY = Rect.y;
+		float EndX = CenterX, EndY = 0;
+
 		switch (ESPConfig::LinePos)
 		{
-		case 0:
-			Gui.Line({ Rect.x + Rect.z / 2,Rect.y }, { Gui.Window.Size.x / 2,0 }, Color, Thickness);
-			break;
-		case 1:
-			Gui.Line({ Rect.x + Rect.z / 2,Rect.y }, { Gui.Window.Size.x / 2, Gui.Window.Size.y / 2 }, Color, Thickness);
-			break;
-		case 2:
-			Gui.Line({ Rect.x + Rect.z / 2,Rect.y + Rect.w }, { Gui.Window.Size.x / 2, Gui.Window.Size.y }, Color, Thickness);
-			break;
-		default:
-			break;
+		case 1: EndY = CenterY; break;
+		case 2: StartY += Rect.w; EndY = Gui.Window.Size.y; break;
+		default: break;
 		}
 
+		Gui.Line({ StartX, StartY }, { EndX, EndY }, Color, Thickness);
 	}
 
-	void DrawFov(const CEntity& LocalEntity, float Size, ImColor Color, float Thickness)
+	inline void DrawFov(const CEntity& LocalEntity, float Size, ImColor Color, float Thickness)
 	{
 		if (!LegitBotConfig::ShowFovLine || MenuConfig::ShowMenu)
 			return;
 
-		float Length;
-		float radian;
-		Vec2 LineEndPoint[2];
-		Vec2 Pos = Gui.Window.Size / 2;
+		constexpr float DEG_TO_RAD = M_PI / 180.0f;
+		const Vec2 Pos = Gui.Window.Size * 0.5f;
+		const float radian = (LocalEntity.Pawn.Fov * 0.5f) * DEG_TO_RAD;
+		const float Length = Size * tan(radian);
 
-		radian = (LocalEntity.Pawn.Fov / 2) * M_PI / 180;
+		std::array<Vec2, 2> LineEndPoints = {
+			Vec2(Pos.x - Length, Pos.y - Size),
+			Vec2(Pos.x + Length, Pos.y - Size)
+		};
 
-		LineEndPoint[0].y = Pos.y - Size;
-		LineEndPoint[1].y = LineEndPoint[0].y;
-
-		Length = Size * tan(radian);
-
-		LineEndPoint[0].x = Pos.x - Length;
-		LineEndPoint[1].x = Pos.x + Length;
-
-		Gui.Line(Pos, LineEndPoint[0], Color, 1.5);
-		Gui.Line(Pos, LineEndPoint[1], Color, 1.5);
+		Gui.Line(Pos, LineEndPoints[0], Color, 1.5f);
+		Gui.Line(Pos, LineEndPoints[1], Color, 1.5f);
 	}
 
-	void HeadShootLine(const CEntity& LocalEntity, ImColor Color)
+	inline void HeadShootLine(const CEntity& LocalEntity, ImColor Color)
 	{
 		if (!MiscCFG::ShowHeadShootLine || MenuConfig::ShowMenu)
 			return;
 
-		float View = 0.f;
+		// Pre-compute half dimensions
+		const float halfWindowX = Gui.Window.Size.x * 0.5f;
+		const float halfWindowY = Gui.Window.Size.y * 0.5f;
+
+		// Convert angles to radians
+		const float fovRadians = LocalEntity.Pawn.Fov * (M_PI / 180.0f);
+		const float viewAngleXRadians = LocalEntity.Pawn.ViewAngle.x * (M_PI / 180.0f);
+
+		// Compute sine values
+		const float fovSin = std::sin(fovRadians);
+		const float viewSin = std::sin(viewAngleXRadians);
+
+		// Pre-compute scale factor once (note: sin(90°) is 1, so it is removed)
+		const float scaleFactor = Gui.Window.Size.y / (2.0f * fovSin);
 
 		Vec2 Pos;
-		Pos.x = Gui.Window.Size.x / 2;
-		Pos.y = Gui.Window.Size.y / 2.0f - Gui.Window.Size.y / (2.0f * std::sin(LocalEntity.Pawn.Fov * M_PI / 180.0f) / std::sin(90.0f * M_PI / 180.0f)) * std::sin(LocalEntity.Pawn.ViewAngle.x * M_PI / 180.0f) / std::sin(90.0f * M_PI / 180.0f);
+		Pos.x = halfWindowX;
+		Pos.y = halfWindowY - scaleFactor * viewSin;
 
-		// left
+		// Left rectangles
 		Gui.RectangleFilled(Vec2{ Pos.x - 21, Pos.y - 1 }, Vec2{ 17, 3 }, Color & IM_COL32_A_MASK);
 		Gui.RectangleFilled(Vec2{ Pos.x - 20, Pos.y }, Vec2{ 17, 3 }, Color);
 
-		// right
+		// Right rectangles
 		Gui.RectangleFilled(Vec2{ Pos.x + 5, Pos.y - 1 }, Vec2{ 17, 3 }, Color & IM_COL32_A_MASK);
 		Gui.RectangleFilled(Vec2{ Pos.x + 6, Pos.y }, Vec2{ 17, 3 }, Color);
+
 	}
 
-	ImVec4 Get2DBox(const CEntity& Entity)
+	inline ImVec4 Get2DBox(const CEntity& Entity)
 	{
-		BoneJointPos Head = Entity.GetBone().BonePosList[BONEINDEX::head];
+		BoneJointPos headBone = Entity.GetBone().BonePosList[BONEINDEX::head];
 
-		Vec2 Size, Pos;
-		Size.y = (Entity.Pawn.ScreenPos.y - Head.ScreenPos.y) * 1.09;
-		Size.x = Size.y * 0.6;
+		const float diffY = Entity.Pawn.ScreenPos.y - headBone.ScreenPos.y;
+		const float sizeY = diffY * 1.09f;
+		const float sizeX = sizeY * 0.6f;
 
-		Pos = ImVec2(Entity.Pawn.ScreenPos.x - Size.x / 2, Head.ScreenPos.y - Size.y * 0.08);
+		const float posX = Entity.Pawn.ScreenPos.x - sizeX * 0.5f;
+		const float posY = headBone.ScreenPos.y - sizeY * 0.08f;
 
-		return ImVec4{ Pos.x,Pos.y,Size.x,Size.y };
+		return ImVec4{ posX, posY, sizeX, sizeY };
+
 	}
 
-	void DrawBone(const CEntity& Entity, ImColor Color, float Thickness)
+	inline void DrawBone(const CEntity& Entity, ImColor Color, float Thickness)
 	{
 		if (!ESPConfig::ShowBoneESP)
 			return;
 
-		BoneJointPos Previous, Current;
-		for (auto i : BoneJointList::List)
+		const auto& bonePosList = Entity.GetBone().BonePosList;
+		BoneJointPos previous, current;
+
+		for (const auto& boneChain : BoneJointList::List)
 		{
-			Previous.Pos = Vec3(0, 0, 0);
-			for (auto Index : i)
+			previous.Pos = Vec3(0, 0, 0);
+			for (const auto& index : boneChain)
 			{
-				Current = Entity.GetBone().BonePosList[Index];
-				if (Previous.Pos == Vec3(0, 0, 0))
+				current = bonePosList[index];
+				if (previous.Pos == Vec3(0, 0, 0))
 				{
-					Previous = Current;
-					//pGame->View->Gui->Text(Current.Name.c_str(), Current.ScreenPos, ImColor(255, 255, 0, 255));
+					previous = current;
 					continue;
 				}
-				if (Previous.IsVisible && Current.IsVisible)
+				if (previous.IsVisible && current.IsVisible)
 				{
-					Gui.Line(Previous.ScreenPos, Current.ScreenPos, Color, Thickness);
-					//pGame->View->Gui->Text(Current.Name.c_str(), Current.ScreenPos, ImColor(255, 255, 0, 255));
+					Gui.Line(previous.ScreenPos, current.ScreenPos, Color, Thickness);
 				}
-				Previous = Current;
+				previous = current;
 			}
 		}
 	}
 
-	void ShowLosLine(const CEntity& Entity, const float Length, ImColor Color, float Thickness)
+	inline void ShowLosLine(const CEntity& Entity, const float Length, ImColor Color, float Thickness)
 	{
 		if (!ESPConfig::ShowEyeRay)
 			return;
 
-		Vec2 StartPoint, EndPoint;
-		Vec3 Temp;
-		BoneJointPos Head = Entity.GetBone().BonePosList[BONEINDEX::head];
+		const auto& bonePosList = Entity.GetBone().BonePosList;
+		const BoneJointPos& head = bonePosList[BONEINDEX::head];
+		const Vec2 startPoint = head.ScreenPos;
 
-		StartPoint = Head.ScreenPos;
+		const float degToRad = M_PI / 180.0f;
+		const float viewAngleX = Entity.Pawn.ViewAngle.x * degToRad;
+		const float viewAngleY = Entity.Pawn.ViewAngle.y * degToRad;
 
-		float LineLength = cos(Entity.Pawn.ViewAngle.x * M_PI / 180) * Length;
+		const float lineLength = cos(viewAngleX) * Length;
 
-		Temp.x = Head.Pos.x + cos(Entity.Pawn.ViewAngle.y * M_PI / 180) * LineLength;
-		Temp.y = Head.Pos.y + sin(Entity.Pawn.ViewAngle.y * M_PI / 180) * LineLength;
-		Temp.z = Head.Pos.z - sin(Entity.Pawn.ViewAngle.x * M_PI / 180) * Length;
+		Vec3 temp;
+		temp.x = head.Pos.x + cos(viewAngleY) * lineLength;
+		temp.y = head.Pos.y + sin(viewAngleY) * lineLength;
+		temp.z = head.Pos.z - sin(viewAngleX) * Length;
 
-		if (!gGame.View.WorldToScreen(Temp, EndPoint))
+		Vec2 endPoint;
+		if (!gGame.View.WorldToScreen(temp, endPoint))
 			return;
 
-		Gui.Line(StartPoint, EndPoint, Color, Thickness);
+		Gui.Line(startPoint, endPoint, Color, Thickness);
 	}
 
-	ImVec4 Get2DBoneRect(const CEntity& Entity)
+	inline ImVec4 Get2DBoneRect(const CEntity& Entity)
 	{
-		Vec2 Min, Max, Size;
-		Min = Max = Entity.GetBone().BonePosList[0].ScreenPos;
+		const auto& bonePosList = Entity.GetBone().BonePosList;
+		if (bonePosList.empty())
+			return ImVec4(0, 0, 0, 0);
 
-		for (auto& BoneJoint : Entity.GetBone().BonePosList)
+		Vec2 minPos = bonePosList[0].ScreenPos;
+		Vec2 maxPos = bonePosList[0].ScreenPos;
+
+		for (const auto& boneJoint : bonePosList)
 		{
-			if (!BoneJoint.IsVisible)
+			if (!boneJoint.IsVisible)
 				continue;
-			Min.x = min(BoneJoint.ScreenPos.x, Min.x);
-			Min.y = min(BoneJoint.ScreenPos.y, Min.y);
-			Max.x = max(BoneJoint.ScreenPos.x, Max.x);
-			Max.y = max(BoneJoint.ScreenPos.y, Max.y);
+			minPos.x = min(boneJoint.ScreenPos.x, minPos.x);
+			minPos.y = min(boneJoint.ScreenPos.y, minPos.y);
+			maxPos.x = max(boneJoint.ScreenPos.x, maxPos.x);
+			maxPos.y = max(boneJoint.ScreenPos.y, maxPos.y);
 		}
-		Size.x = Max.x - Min.x;
-		Size.y = Max.y - Min.y;
 
-		return ImVec4(Min.x, Min.y, Size.x, Size.y);
+		const Vec2 size{ maxPos.x - minPos.x, maxPos.y - minPos.y };
+		return ImVec4(minPos.x, minPos.y, size.x, size.y);
 	}
+
 
 	class HealthBar
 	{
 	private:
 		using TimePoint_ = std::chrono::steady_clock::time_point;
-	private:
 		const int ShowBackUpHealthDuration = 500;
 		float MaxHealth = 0.f;
 		float CurrentHealth = 0.f;
@@ -299,40 +287,37 @@ namespace Render
 	public:
 		HealthBar() {}
 
-		void HealthBarV(float MaxHealth, float CurrentHealth, ImVec2 Pos, ImVec2 Size, bool ShowNum);
+		void HealthBarV(float MaxHealth, float CurrentHealth, const ImVec2& Pos, const ImVec2& Size, bool ShowNum);
+		void ArmorBarV(bool HasHelmet, float MaxArmor, float CurrentArmor, const ImVec2& Pos, const ImVec2& Size, bool ShowNum);
+		void AmmoBarH(float MaxAmmo, float CurrentAmmo, const ImVec2& Pos, const ImVec2& Size);
 
-		void ArmorBarV(bool HasHelmet, float MaxHealth, float CurrentHealth, ImVec2 Pos, ImVec2 Size, bool ShowNum);
-
-		void AmmoBarH(float MaxAmmo, float CurrentAmmo, ImVec2 Pos, ImVec2 Size);
 	private:
-
-		ImColor Mix(ImColor Col_1, ImColor Col_2, float t);
+		inline ImColor Mix(const ImColor& Col_1, const ImColor& Col_2, float t)
+		{
+			ImColor col;
+			col.Value.x = t * Col_1.Value.x + (1.0f - t) * Col_2.Value.x;
+			col.Value.y = t * Col_1.Value.y + (1.0f - t) * Col_2.Value.y;
+			col.Value.z = t * Col_1.Value.z + (1.0f - t) * Col_2.Value.z;
+			col.Value.w = Col_1.Value.w;
+			return col;
+		}
 
 		ImColor FirstStageColor = ImColor(0, 255, 0, 255);
-
 		ImColor SecondStageColor = ImColor(255, 232, 0, 255);
-
 		ImColor ThirdStageColor = ImColor(255, 39, 0, 255);
-
 		ImColor BackupHealthColor = ImColor(255, 255, 255, 220);
-
 		ImColor FrameColor = ImColor(45, 45, 45, 220);
-
 		ImColor BackGroundColor = ImColor(0, 0, 0, 255);
-
 		ImColor AmmoColor = ImColor(255, 255, 0, 255);
-
 		ImColor ArmorColor = ImColor(0, 128, 255, 255);
 		ImColor ArmorWithHelmetColor = ImColor(255, 0, 255, 255);
 	};
 
-	void HealthBar::HealthBarV(float MaxHealth, float CurrentHealth, ImVec2 Pos, ImVec2 Size, bool ShowNum)
+	//////////////////////////////////////////////////////////////////////////
+	// Vertical Health Bar
+	//////////////////////////////////////////////////////////////////////////
+	void HealthBar::HealthBarV(float MaxHealth, float CurrentHealth, const ImVec2& Pos, const ImVec2& Size, bool ShowNum)
 	{
-		auto InRange = [&](float value, float min, float max) -> bool
-			{
-				return value > min && value <= max;
-			};
-
 		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
 
 		this->MaxHealth = MaxHealth;
@@ -340,48 +325,37 @@ namespace Render
 		this->RectPos = Pos;
 		this->RectSize = Size;
 
-		float Proportion = CurrentHealth / MaxHealth;
+		float proportion = (MaxHealth > 0.f) ? CurrentHealth / MaxHealth : 0.f;
+		proportion = (proportion < 0.f) ? 0.f : ((proportion > 1.f) ? 1.f : proportion);
 
-		float Height = RectSize.y * Proportion;
+		float height = RectSize.y * proportion;
+		ImVec2 rectBR = { RectPos.x + RectSize.x, RectPos.y + RectSize.y };
 
-		ImColor Color;
+		DrawList->AddRectFilled(RectPos, rectBR, BackGroundColor, 5, 15);
 
-		DrawList->AddRectFilled(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			BackGroundColor, 5, 15);
+		float colorLerpT = powf(proportion, 2.5f);
+		ImColor color = (proportion > 0.5f && proportion <= 1.f) ?
+			Mix(FirstStageColor, SecondStageColor, colorLerpT * 3.f - 1.f) :
+			Mix(SecondStageColor, ThirdStageColor, colorLerpT * 4.f);
 
-		float Color_Lerp_t = pow(Proportion, 2.5);
-		if (InRange(Proportion, 0.5, 1))
-			Color = Mix(FirstStageColor, SecondStageColor, Color_Lerp_t * 3 - 1);
-		else
-			Color = Mix(SecondStageColor, ThirdStageColor, Color_Lerp_t * 4);
+		ImVec2 healthRectTL = { RectPos.x, RectPos.y + RectSize.y - height };
+		DrawList->AddRectFilled(healthRectTL, rectBR, color, 0);
 
-		DrawList->AddRectFilled({ RectPos.x,RectPos.y + RectSize.y - Height },
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			Color, 0);
+		DrawList->AddRect(RectPos, rectBR, FrameColor, 0, 15, 1);
 
-		DrawList->AddRect(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			FrameColor, 0, 15, 1);
-
-		if (ShowNum)
+		if (ShowNum && CurrentHealth < MaxHealth)
 		{
-			if (CurrentHealth < MaxHealth)
-			{
-				std::string health_str = Format("%.f", CurrentHealth);
-				Vec2 Pos = { RectPos.x,RectPos.y + RectSize.y - Height };
-				Gui.StrokeText(health_str, Pos, ImColor(255, 255, 255), 13.f, true);
-			}
+			char healthStr[16];
+			snprintf(healthStr, sizeof(healthStr), "%.f", CurrentHealth);
+			Gui.StrokeText(healthStr, healthRectTL, ImColor(255, 255, 255), 13.f, true);
 		}
 	}
 
-	void HealthBar::ArmorBarV(bool HasHelmet, float MaxArmor, float CurrentArmor, ImVec2 Pos, ImVec2 Size, bool ShowNum)
+	//////////////////////////////////////////////////////////////////////////
+	// Vertical Armor Bar
+	//////////////////////////////////////////////////////////////////////////
+	void HealthBar::ArmorBarV(bool HasHelmet, float MaxArmor, float CurrentArmor, const ImVec2& Pos, const ImVec2& Size, bool ShowNum)
 	{
-		auto InRange = [&](float value, float min, float max) -> bool
-			{
-				return value > min && value <= max;
-			};
-
 		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
 
 		this->MaxArmor = MaxArmor;
@@ -389,41 +363,32 @@ namespace Render
 		this->RectPos = Pos;
 		this->RectSize = Size;
 
-		float Proportion = CurrentArmor / MaxArmor;
+		float proportion = (MaxArmor > 0.f) ? CurrentArmor / MaxArmor : 0.f;
+		proportion = (proportion < 0.f) ? 0.f : ((proportion > 1.f) ? 1.f : proportion);
 
-		float Height = RectSize.y * Proportion;
+		float height = RectSize.y * proportion;
+		ImVec2 rectBR = { RectPos.x + RectSize.x, RectPos.y + RectSize.y };
 
-		ImColor Color;
+		DrawList->AddRectFilled(RectPos, rectBR, BackGroundColor, 5, 15);
 
-		DrawList->AddRectFilled(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			BackGroundColor, 5, 15);
+		ImColor color = HasHelmet ? ArmorWithHelmetColor : ArmorColor;
+		ImVec2 armorRectTL = { RectPos.x, RectPos.y + RectSize.y - height };
+		DrawList->AddRectFilled(armorRectTL, rectBR, color, 0);
 
-		if (HasHelmet)
-			Color = ArmorWithHelmetColor;
-		else
-			Color = ArmorColor;
+		DrawList->AddRect(RectPos, rectBR, FrameColor, 0, 15, 1);
 
-		DrawList->AddRectFilled({ RectPos.x,RectPos.y + RectSize.y - Height },
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			Color, 0);
-
-		DrawList->AddRect(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			FrameColor, 0, 15, 1);
-
-		if (ShowNum)
+		if (ShowNum && CurrentArmor < MaxArmor)
 		{
-			if (CurrentArmor < MaxArmor)
-			{
-				std::string armor_str = Format("%.f", CurrentArmor);
-				Vec2 Pos = { RectPos.x,RectPos.y + RectSize.y - Height };
-				Gui.StrokeText(armor_str, Pos, ImColor(255, 255, 255), 13.f, true);
-			}
+			char armorStr[16];
+			snprintf(armorStr, sizeof(armorStr), "%.f", CurrentArmor);
+			Gui.StrokeText(armorStr, armorRectTL, ImColor(255, 255, 255), 13.f, true);
 		}
 	}
 
-	void HealthBar::AmmoBarH(float MaxAmmo, float CurrentAmmo, ImVec2 Pos, ImVec2 Size)
+	//////////////////////////////////////////////////////////////////////////
+	// Horizontal Ammo Bar
+	//////////////////////////////////////////////////////////////////////////
+	void HealthBar::AmmoBarH(float MaxAmmo, float CurrentAmmo, const ImVec2& Pos, const ImVec2& Size)
 	{
 		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
 
@@ -432,85 +397,49 @@ namespace Render
 		this->RectPos = Pos;
 		this->RectSize = Size;
 
-		float Proportion = CurrentAmmo / MaxAmmo;
+		float proportion = (MaxAmmo > 0) ? CurrentAmmo / static_cast<float>(MaxAmmo) : 0.f;
+		proportion = (proportion < 0.f) ? 0.f : ((proportion > 1.f) ? 1.f : proportion);
 
-		float Width = RectSize.x * Proportion;
+		float width = RectSize.x * proportion;
+		ImVec2 rectBR = { RectPos.x + RectSize.x, RectPos.y + RectSize.y };
 
-		DrawList->AddRectFilled(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			BackGroundColor, 5, 15);
+		DrawList->AddRectFilled(RectPos, rectBR, BackGroundColor, 5, 15);
 
-		DrawList->AddRectFilled(RectPos,
-			{ RectPos.x + Width,RectPos.y + RectSize.y },
-			AmmoColor, 0);
+		ImVec2 ammoRectBR = { RectPos.x + width, RectPos.y + RectSize.y };
+		DrawList->AddRectFilled(RectPos, ammoRectBR, AmmoColor, 0);
 
-		DrawList->AddRect(RectPos,
-			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			FrameColor, 0, 15, 1);
+		DrawList->AddRect(RectPos, rectBR, FrameColor, 0, 15, 1);
 	}
 
-	ImColor HealthBar::Mix(ImColor Col_1, ImColor Col_2, float t)
+	void DrawHealthBar(DWORD Sign, float MaxHealth, float CurrentHealth, const ImVec2& Pos, const ImVec2& Size)
 	{
-		ImColor Col;
-		Col.Value.x = t * Col_1.Value.x + (1 - t) * Col_2.Value.x;
-		Col.Value.y = t * Col_1.Value.y + (1 - t) * Col_2.Value.y;
-		Col.Value.z = t * Col_1.Value.z + (1 - t) * Col_2.Value.z;
-		Col.Value.w = Col_1.Value.w;
-		return Col;
+		static std::unordered_map<DWORD, HealthBar> HealthBarMap;
+		HealthBar& hb = HealthBarMap[Sign];
+		hb.HealthBarV(MaxHealth, CurrentHealth, Pos, Size, ESPConfig::ShowHealthNum);
 	}
 
-	void DrawHealthBar(DWORD Sign, float MaxHealth, float CurrentHealth, ImVec2 Pos, ImVec2 Size)
+	void DrawAmmoBar(DWORD Sign, float MaxAmmo, float CurrentAmmo, const ImVec2& Pos, const ImVec2& Size)
 	{
-		static std::map<DWORD, HealthBar> HealthBarMap;
-		if (!HealthBarMap.count(Sign))
-			HealthBarMap.insert({ Sign,HealthBar() });
-
-		if (HealthBarMap.count(Sign))
-			HealthBarMap[Sign].HealthBarV(MaxHealth, CurrentHealth, Pos, Size, ESPConfig::ShowHealthNum);
+		static std::unordered_map<DWORD, HealthBar> HealthBarMap;
+		HealthBar& hb = HealthBarMap[Sign];
+		hb.AmmoBarH(MaxAmmo, CurrentAmmo, Pos, Size);
 	}
-
-	void DrawAmmoBar(DWORD Sign, float MaxAmmo, float CurrentAmmo, ImVec2 Pos, ImVec2 Size)
+	void DrawArmorBar(DWORD Sign, float MaxArmor, float CurrentArmor, bool HasHelmet, const ImVec2& Pos, const ImVec2& Size)
 	{
-		static std::map<DWORD, HealthBar> HealthBarMap;
-		if (!HealthBarMap.count(Sign))
-			HealthBarMap.insert({ Sign,HealthBar() });
-
-		if (HealthBarMap.count(Sign))
-			HealthBarMap[Sign].AmmoBarH(MaxAmmo, CurrentAmmo, Pos, Size);
+		static std::unordered_map<DWORD, HealthBar> HealthBarMap;
+		HealthBar& hb = HealthBarMap[Sign];
+		hb.ArmorBarV(HasHelmet, MaxArmor, CurrentArmor, Pos, Size, ESPConfig::ShowArmorNum);
 	}
 
-	void DrawArmorBar(DWORD Sign, float MaxArmor, float CurrentArmor, bool HasHelmet, ImVec2 Pos, ImVec2 Size)
-	{
-		static std::map<DWORD, HealthBar> HealthBarMap;
-		if (!HealthBarMap.count(Sign))
-			HealthBarMap.insert({ Sign,HealthBar() });
-
-		if (HealthBarMap.count(Sign))
-			HealthBarMap[Sign].ArmorBarV(HasHelmet, MaxArmor, CurrentArmor, Pos, Size, ESPConfig::ShowArmorNum);
-	}
-
-	// Get the center pos of screen
 	ImVec2 GetScreenCenterImVec2()
 	{
 		int W = GetSystemMetrics(SM_CXSCREEN);
 		int H = GetSystemMetrics(SM_CYSCREEN);
-
-		float CenterX = static_cast<float>(W) / 2;
-		float CenterY = static_cast<float>(H) / 2;
-
-		return ImVec2(CenterX, CenterY);
+		return ImVec2(W / 2.0f, H / 2.0f);
 	}
 
-	// Convert RGBA to ImVec4
-	// Why not use "ImColor()"? Because I forgot about this.
-	ImVec4 rgba2ImVec(int r, int g, int b, int a)
+	inline ImVec4 rgba2ImVec(int r, int g, int b, int a)
 	{
-		ImVec4 color;
-		color.x = static_cast<float>(r) / 255.0f;
-		color.y = static_cast<float>(g) / 255.0f;
-		color.z = static_cast<float>(b) / 255.0f;
-		color.w = static_cast<float>(a) / 255.0f;
-
-		return color;
+		return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
 	}
 }
