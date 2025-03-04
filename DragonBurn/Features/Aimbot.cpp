@@ -10,7 +10,11 @@ void AimControl::AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& 
     if (MenuConfig::ShowMenu)
         return;
 
-    if (!TriggerBot::CheckWeapon(Local))
+    std::string curWeapon = TriggerBot::GetWeapon(Local);
+    if (!TriggerBot::CheckWeapon(curWeapon))
+        return;
+
+    if (onlyAuto && !CheckAutoMode(curWeapon))
         return;
 
     if (Local.Pawn.ShotsFired <= AimBullet - 1 && AimBullet != 0)
@@ -24,7 +28,7 @@ void AimControl::AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& 
     {
         bool isScoped;
         memoryManager.ReadMemory<bool>(Local.Pawn.Address + Offset.Pawn.isScoped, isScoped);
-        if (!isScoped and TriggerBot::CheckScopeWeapon(Local))
+        if (!isScoped and TriggerBot::CheckScopeWeapon(curWeapon))
         {
             HasTarget = false;
             return;
@@ -145,4 +149,12 @@ void AimControl::AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& 
     }
     else
         HasTarget = false;
+}
+
+bool AimControl::CheckAutoMode(const std::string& WeaponName)
+{
+    if (WeaponName == "deagle" || WeaponName == "elite" || WeaponName == "fiveseven" || WeaponName == "glock" || WeaponName == "awp" || WeaponName == "xm1014" || WeaponName == "mag7" || WeaponName == "sawedoff" || WeaponName == "tec9" || WeaponName == "zeus" || WeaponName == "p2000" || WeaponName == "nova" || WeaponName == "p250" || WeaponName == "ssg08" || WeaponName == "usp" || WeaponName == "revolver")
+        return false;
+    else
+        return true;
 }

@@ -66,17 +66,17 @@ https://github.com/ByteCorum/DragonBurn
 
 	case 1:
 		Log::PreviousLine();
-		Log::Error("Failed to get current version");
+		Log::Error("Failed to get currently supported versions");
 		break;
 		
 	case 2:
 		Log::PreviousLine();
-		Log::Error("Your cheat version is outdated");
+		Log::Error("Your cheat version is out of support");
 		break;
 		
 	case 3:
 		Log::PreviousLine();
-		Log::Fine("Your cheat version is up to date");
+		Log::Fine("Your cheat version is up to date and supported");
 		break;
 
 	default:

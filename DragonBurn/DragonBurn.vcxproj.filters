@@ -177,9 +177,6 @@
     <ClInclude Include="Helpers\Logger.h">
       <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Resource.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
     <ClInclude Include="Core\MemoryMgr.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -187,9 +184,10 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Helpers\KeyManager.h" />
+    <ClInclude Include="Resources\Resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon.ico">
+    <Image Include="Resources\icon.ico">
       <Filter>Resources</Filter>
     </Image>
   </ItemGroup>
@@ -272,8 +270,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Resources\Resource.rc">
-      <Filter>Resources</Filter>
-    </ResourceCompile>
+    <ResourceCompile Include="Resources\Resource.rc" />
   </ItemGroup>
 </Project>

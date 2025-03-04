@@ -58,6 +58,8 @@ namespace Text {
         inline std::string ScopeOnly = "Scope Check";
         inline std::string BulletSlider = "Start Bullet: ";
         inline std::string IgnoreFlash = "Ignore Flash";
+        inline std::string OnlyAuto = "Only Auto";
+        inline std::string OnlyAutoTip = "Aim will only work in automatic shooting mode";
     }
 
     namespace RCS

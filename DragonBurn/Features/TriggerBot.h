@@ -17,9 +17,8 @@ namespace TriggerBot
 	inline bool recorded = false;
 	inline bool VisibleCheck = true;
 
-	// Triggerbot
 	void Run(const CEntity& LocalEntity);
-	//void TargetCheck(const CEntity& LocalEntity) noexcept;
-	bool CheckScopeWeapon(const CEntity& LocalEntity);
-	bool CheckWeapon(const CEntity& LocalEntity);
+	bool CheckScopeWeapon(const std::string& WeaponName);
+	std::string GetWeapon(const CEntity& LocalEntity);
+	bool CheckWeapon(const std::string& WeaponName);
 }
