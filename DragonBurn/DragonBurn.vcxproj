@@ -221,7 +221,7 @@
     <ClInclude Include="Resources\WeaponIcon.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon.ico" />
+    <Image Include="Resources\icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\ConfigMenu.cpp" />
