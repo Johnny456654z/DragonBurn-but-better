@@ -71,15 +71,6 @@ namespace ESP
 		case 1:
 			Rect = Render::Get2DBox(Entity);
 			break;
-		//case 2:
-		//	Rect = Render::Get2DBox(Entity);
-		//	break;
-		//case 3:
-		//	Rect = Render::Get2DBox(Entity);
-		//	break;
-		//case 4:
-		//	Rect = Render::Get2DBoneRect(Entity);
-		//	break;
 		default:
 			break;
 		}
@@ -87,332 +78,299 @@ namespace ESP
 		return Rect;
 	}
 
-	const char* RenderWeaponIcon(const CEntity& Entity)
-	{
-		uintptr_t ClippingWeapon, WeaponData, WeaponNameAddress;
-		memoryManager.ReadMemory(Entity.Pawn.Address + Offset.Pawn.pClippingWeapon, ClippingWeapon);
-		memoryManager.ReadMemory(ClippingWeapon + Offset.WeaponBaseData.WeaponDataPTR, WeaponData);
-		memoryManager.ReadMemory(WeaponData + Offset.WeaponBaseData.szName, WeaponNameAddress);
-		std::string weaponName = "Invalid Weapon Name";
-
-		if (!WeaponNameAddress)
-		{
-			weaponName = "NULL";
-		}
-		else {
-			weaponName = Entity.Pawn.WeaponName;
-		}
-		std::string weaponIcon = GunIcon(weaponName);
-		return weaponIcon.c_str();
-	}
-
 	void RenderPlayerESP(const CEntity& LocalEntity, const CEntity& Entity, ImVec4 Rect, int LocalPlayerControllerIndex, int Index)
 	{
+		// Cache frequently used values
 		std::string weaponIcon = GunIcon(Entity.Pawn.WeaponName);
+		const auto ioFonts = ImGui::GetIO().Fonts->Fonts[1];
+		DWORD64 playerMask = (DWORD64(1) << LocalPlayerControllerIndex);
+		bool bIsVisible = (Entity.Pawn.bSpottedByMask & playerMask) || (LocalEntity.Pawn.bSpottedByMask & playerMask);
+		bool bIsVisibleIndex = (Entity.Pawn.bSpottedByMask & playerMask) || (LocalEntity.Pawn.bSpottedByMask & (DWORD64(1) << Index));
 
+		// Render bones, LOS, and head circle
 		Render::DrawBone(Entity, ESPConfig::BoneColor, 1.3f);
 		Render::ShowLosLine(Entity, 50.0f, ESPConfig::EyeRayColor, 1.3f);
 		Render::DrawHeadCircle(Entity, ESPConfig::HeadBoxColor);
 
-		// box
+		// Draw filled box if enabled
 		if (ESPConfig::FilledBox) {
-			float Rounding = ESPConfig::BoxRounding;
-			//if (ESPConfig::BoxType == 2 || ESPConfig::BoxType == 3)
-				//Rounding = 0.f;
-			ImColor FlatBoxCol = ESPConfig::FilledColor;
-			ImColor FlatBoxCol2 = ESPConfig::FilledColor2;
-			ImColor FlatBoxVisCol = ESPConfig::BoxFilledVisColor;
+			float rounding = ESPConfig::BoxRounding;
+			ImColor flatBoxCol = ESPConfig::FilledColor;
+			ImColor flatBoxCol2 = ESPConfig::FilledColor2;
+			ImColor flatBoxVisCol = ESPConfig::BoxFilledVisColor;
 			if (ESPConfig::FilledVisBox) {
-				if ((Entity.Pawn.bSpottedByMask & (DWORD64(1) << LocalPlayerControllerIndex)) ||
-					(LocalEntity.Pawn.bSpottedByMask & (DWORD64(1) << LocalPlayerControllerIndex))) {
-
-					Gui.RectangleFilled({ Rect.x, Rect.y }, { Rect.z, Rect.w }, FlatBoxVisCol, Rounding);
-				}
-				else {
-					Gui.RectangleFilled({ Rect.x, Rect.y }, { Rect.z, Rect.w }, FlatBoxCol, Rounding);
-				}
+				Gui.RectangleFilled({ Rect.x, Rect.y }, { Rect.z, Rect.w }, bIsVisible ? flatBoxVisCol : flatBoxCol, rounding);
 			}
 			else {
-				if (ESPConfig::MultiColor)
-				{
-					Gui.RectangleFilledGraident({ Rect.x, Rect.y }, { Rect.z, Rect.w }, ESPConfig::BoxColor, FlatBoxCol, FlatBoxCol2, Rounding);
+				if (ESPConfig::MultiColor) {
+					Gui.RectangleFilledGraident({ Rect.x, Rect.y }, { Rect.z, Rect.w }, ESPConfig::BoxColor, flatBoxCol, flatBoxCol2, rounding);
 				}
-				else
-				{
-					Gui.RectangleFilled({ Rect.x, Rect.y }, { Rect.z, Rect.w }, FlatBoxCol, Rounding);
+				else {
+					Gui.RectangleFilled({ Rect.x, Rect.y }, { Rect.z, Rect.w }, flatBoxCol, rounding);
 				}
-
 			}
 		}
-		if (ESPConfig::ShowBoxESP)
-		{
-			if (ESPConfig::BoxType == 0)
-			{
+
+		if (ESPConfig::ShowBoxESP) {
+			if (ESPConfig::BoxType == 0) {
 				if (ESPConfig::OutLine)
-					Gui.Rectangle({ Rect.x,Rect.y }, { Rect.z,Rect.w }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3, ESPConfig::BoxRounding);
+					Gui.Rectangle({ Rect.x, Rect.y }, { Rect.z, Rect.w }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3, ESPConfig::BoxRounding);
 
-				if (((Entity.Pawn.bSpottedByMask & (DWORD64(1) << LocalPlayerControllerIndex)) || (LocalEntity.Pawn.bSpottedByMask & (DWORD64(1) << Index))) && ESPConfig::VisibleCheck)
-				{
-					Gui.Rectangle({ Rect.x,Rect.y }, { Rect.z,Rect.w }, ESPConfig::VisibleColor, 1.3, ESPConfig::BoxRounding);
-				}
-				else {
-					Gui.Rectangle({ Rect.x,Rect.y }, { Rect.z,Rect.w }, ESPConfig::BoxColor, 1.3, ESPConfig::BoxRounding);
-				}
+				if (bIsVisibleIndex && ESPConfig::VisibleCheck)
+					Gui.Rectangle({ Rect.x, Rect.y }, { Rect.z, Rect.w }, ESPConfig::VisibleColor, 1.3f, ESPConfig::BoxRounding);
+				else
+					Gui.Rectangle({ Rect.x, Rect.y }, { Rect.z, Rect.w }, ESPConfig::BoxColor, 1.3f, ESPConfig::BoxRounding);
 			}
-			else if (ESPConfig::BoxType == 1)
-			{
-				//Outline
-				Gui.Line({ Rect.x, Rect.y }, { Rect.x + Rect.z * 0.25f, Rect.y }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x, Rect.y }, { Rect.x, Rect.y + Rect.w * 0.25f }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x + Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
-				Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z, Rect.y + Rect.w * 0.25f }, ESPConfig::BoxColor & IM_COL32_A_MASK, 3);
+			else if (ESPConfig::BoxType == 1) {
+				const int outlineThickness = 3;
+				const float quarterWidth = Rect.z * 0.25f;
+				const float quarterHeight = Rect.w * 0.25f;
+				ImVec2 topLeft = { Rect.x, Rect.y };
+				ImVec2 topRight = { Rect.x + Rect.z, Rect.y };
+				ImVec2 bottomLeft = { Rect.x, Rect.y + Rect.w };
+				ImVec2 bottomRight = { Rect.x + Rect.z, Rect.y + Rect.w };
 
-				// Main Box Lines
-				if (((Entity.Pawn.bSpottedByMask & (DWORD64(1) << LocalPlayerControllerIndex)) || (LocalEntity.Pawn.bSpottedByMask & (DWORD64(1) << Index))) && ESPConfig::VisibleCheck)
-				{
-					Gui.Line({ Rect.x, Rect.y }, { Rect.x + Rect.z * 0.25f, Rect.y }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y }, { Rect.x, Rect.y + Rect.w * 0.25f }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z, Rect.y + Rect.w * 0.25f }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x + Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::VisibleColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::VisibleColor, 1.3f);
-				}
-				else {
-					Gui.Line({ Rect.x, Rect.y }, { Rect.x + Rect.z * 0.25f, Rect.y }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y }, { Rect.x, Rect.y + Rect.w * 0.25f }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y }, { Rect.x + Rect.z, Rect.y + Rect.w * 0.25f }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x + Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x, Rect.y + Rect.w }, { Rect.x, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z - Rect.z * 0.25f, Rect.y + Rect.w }, ESPConfig::BoxColor, 1.3f);
-					Gui.Line({ Rect.x + Rect.z, Rect.y + Rect.w }, { Rect.x + Rect.z, Rect.y + Rect.w - Rect.w * 0.25f }, ESPConfig::BoxColor, 1.3f);
-				}
+				struct LineSegment { ImVec2 p1, p2; };
+				LineSegment outlineSegments[8] = {
+					{ topLeft, { topLeft.x + quarterWidth, topLeft.y } },
+					{ topLeft, { topLeft.x, topLeft.y + quarterHeight } },
+					{ topRight, { topRight.x - quarterWidth, topRight.y } },
+					{ topRight, { topRight.x, topRight.y + quarterHeight } },
+					{ bottomLeft, { bottomLeft.x + quarterWidth, bottomLeft.y } },
+					{ bottomLeft, { bottomLeft.x, bottomLeft.y - quarterHeight } },
+					{ bottomRight, { bottomRight.x - quarterWidth, bottomRight.y } },
+					{ bottomRight, { bottomRight.x, bottomRight.y - quarterHeight } }
+				};
+
+				for (const auto& seg : outlineSegments)
+					Gui.Line(seg.p1, seg.p2, ESPConfig::BoxColor & IM_COL32_A_MASK, outlineThickness);
+
+				const float lineThickness = 1.3f;
+				LineSegment mainSegments[8] = {
+					{ topLeft, { topLeft.x + quarterWidth, topLeft.y } },
+					{ topLeft, { topLeft.x, topLeft.y + quarterHeight } },
+					{ topRight, { topRight.x - quarterWidth, topRight.y } },
+					{ topRight, { topRight.x, topRight.y + quarterHeight } },
+					{ bottomLeft, { bottomLeft.x + quarterWidth, bottomLeft.y } },
+					{ bottomLeft, { bottomLeft.x, bottomLeft.y - quarterHeight } },
+					{ bottomRight, { bottomRight.x - quarterWidth, bottomRight.y } },
+					{ bottomRight, { bottomRight.x, bottomRight.y - quarterHeight } }
+				};
+
+				ImU32 lineColor = (bIsVisible && ESPConfig::VisibleCheck) ? ESPConfig::VisibleColor : ESPConfig::BoxColor;
+				for (const auto& seg : mainSegments)
+					Gui.Line(seg.p1, seg.p2, lineColor, lineThickness);
 			}
 		}
 
+		Render::LineToEnemy(Rect, ESPConfig::LineToEnemyColor, 1.2f);
 
-		Render::LineToEnemy(Rect, ESPConfig::LineToEnemyColor, 1.2);
-
-		if (ESPConfig::ShowWeaponESP)
-		{
+		if (ESPConfig::ShowWeaponESP) {
 			WeaponIconSize iconSize = weaponIconSizes[Entity.Pawn.WeaponName];
-			ImVec2 textPosition = { Rect.x + (Rect.z - iconSize.width) / 2 + iconSize.offsetX, Rect.y + Rect.w +1 + iconSize.offsetY };
+			ImVec2 textPosition = { Rect.x + (Rect.z - iconSize.width) / 2 + iconSize.offsetX,
+									  Rect.y + Rect.w + 1 + iconSize.offsetY };
 			if (ESPConfig::AmmoBar)
 				textPosition.y += 6;
-			// Gui.StrokeText(Entity.Pawn.WeaponName, { Rect.x + Rect.z / 2,Rect.y + Rect.w + 10}, ImColor(255, 255, 255, 255), 14, true);
-			ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 10.0f, ImVec2{ textPosition.x - 1, textPosition.y - 1 }, ImColor(0, 0, 0, 255), weaponIcon.c_str());
-			ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 10.0f, ImVec2{ textPosition.x - 1, textPosition.y + 1 }, ImColor(0, 0, 0, 255), weaponIcon.c_str());
-			ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 10.0f, ImVec2{ textPosition.x + 1, textPosition.y + 1 }, ImColor(0, 0, 0, 255), weaponIcon.c_str());
-			ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 10.0f, ImVec2{ textPosition.x + 1, textPosition.y - 1 }, ImColor(0, 0, 0, 255), weaponIcon.c_str());
-			ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 10.0f, textPosition, ImColor(255, 255, 255, 255), weaponIcon.c_str());
+
+			const ImVec2 offsets[4] = { { -1, -1 }, { -1, 1 }, { 1, 1 }, { 1, -1 } };
+			for (const auto& off : offsets) {
+				ImVec2 pos = { textPosition.x + off.x, textPosition.y + off.y };
+				ImGui::GetBackgroundDrawList()->AddText(ioFonts, 10.0f, pos, ImColor(0, 0, 0, 255), weaponIcon.c_str());
+			}
+			ImGui::GetBackgroundDrawList()->AddText(ioFonts, 10.0f, textPosition, ImColor(255, 255, 255, 255), weaponIcon.c_str());
 		}
 
-		if (ESPConfig::ShowIsScoped)
-		{
+		if (ESPConfig::ShowIsScoped) {
 			bool isScoped;
-			ImVec2 IconPos = { Rect.x, Rect.y };
 			memoryManager.ReadMemory<bool>(Entity.Pawn.Address + Offset.Pawn.isScoped, isScoped);
-			if (isScoped)
-			{
-				ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, ImVec2{ IconPos.x - 1, IconPos.y - 1 }, ImColor(0, 0, 0, 255), "s");
-				ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, ImVec2{ IconPos.x - 1, IconPos.y + 1 }, ImColor(0, 0, 0, 255), "s");
-				ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, ImVec2{ IconPos.x + 1, IconPos.y + 1 }, ImColor(0, 0, 0, 255), "s");
-				ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, ImVec2{ IconPos.x + 1, IconPos.y - 1 }, ImColor(0, 0, 0, 255), "s");
-				ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, IconPos, ImColor(131, 137, 150, 255), "s");
+			if (isScoped) {
+				ImVec2 iconPos = { Rect.x, Rect.y };
+				const ImVec2 scopeOffsets[4] = { { -1, -1 }, { -1, 1 }, { 1, 1 }, { 1, -1 } };
+				for (const auto& off : scopeOffsets) {
+					ImVec2 pos = { iconPos.x + off.x, iconPos.y + off.y };
+					ImGui::GetBackgroundDrawList()->AddText(ioFonts, 12.0f, pos, ImColor(0, 0, 0, 255), "s");
+				}
+				ImGui::GetBackgroundDrawList()->AddText(ioFonts, 12.0f, iconPos, ImColor(131, 137, 150, 255), "s");
 			}
 		}
 
-
-		if (ESPConfig::ShowPlayerName)
-		{
-			Gui.StrokeText(Entity.Controller.PlayerName, { Rect.x + Rect.z / 2,Rect.y - 10 }, ImColor(255, 255, 255, 255), 10, true);
+		if (ESPConfig::ShowPlayerName) {
+			Gui.StrokeText(Entity.Controller.PlayerName, { Rect.x + Rect.z / 2, Rect.y - 10 }, ImColor(255, 255, 255, 255), 10, true);
 		}
 	}
 
 	void DrawPreviewBox(const ImVec2& startPos, const ImVec2& endPos, ImColor boxColor, float rounding, float thickness, bool filled) {
-		if (filled) {
+		if (filled)
 			ImGui::GetWindowDrawList()->AddRectFilled(startPos, endPos, boxColor, rounding, ImDrawCornerFlags_All);
-		}
-		else {
+		else
 			ImGui::GetWindowDrawList()->AddRect(startPos, endPos, boxColor, rounding, ImDrawCornerFlags_All, thickness);
-		}
 	}
 
-	void RenderPreview(ImVec2 windowSize)
-	{
-		if (!ESPConfig::ShowPreview)
-			return;
+    void RenderPreview(ImVec2 windowSize)
+    {
+        if (!ESPConfig::ShowPreview)
+            return;
 
-		ImVec2 rectSize(100, 150);
-		ImVec2 rectPos((windowSize.x - rectSize.x) * 0.45f, (windowSize.y - rectSize.y) * 0.3f);
-		ImVec2 centerPos = ImGui::GetCursorScreenPos();
-		centerPos.x += rectPos.x;
-		centerPos.y += rectPos.y * -1.20f;
+        auto drawList = ImGui::GetWindowDrawList();
+        auto& io = ImGui::GetIO();
+        auto font0 = io.Fonts->Fonts[0];
+        auto font1 = io.Fonts->Fonts[1];
 
-		if (ESPConfig::ShowEyeRay) {
-			ImU32 EyeC = ESPConfig::EyeRayColor;
-			ImVec2 lineStart(centerPos.x + 44, centerPos.y + 15);
-			ImVec2 lineEnd(centerPos.x - 10, centerPos.y + 20);
-			ImGui::GetWindowDrawList()->AddLine(lineStart, lineEnd, EyeC, 2.0f);
-		}
-		if (ESPConfig::ShowBoneESP) {
-			ImU32 boneColor = ESPConfig::BoneColor;
-			ImVec2 SpineStart(centerPos.x + 50, centerPos.y + 25);
-			ImVec2 SpineEnd(centerPos.x + 60, centerPos.y + 55);
-			ImGui::GetWindowDrawList()->AddLine(SpineStart, SpineEnd, boneColor, 1.8f); // Neck to Spine
-			ImVec2 PelvisStart(centerPos.x + 60, centerPos.y + 55);
-			ImVec2 PelvisEnd(centerPos.x + 62, centerPos.y + 65);
-			ImGui::GetWindowDrawList()->AddLine(PelvisStart, PelvisEnd, boneColor, 1.8f); // Spine to Pelvis
-			ImVec2 UL_LegStart(centerPos.x + 62, centerPos.y + 65);
-			ImVec2 UL_LegEnd(centerPos.x + 65, centerPos.y + 70);
-			ImGui::GetWindowDrawList()->AddLine(UL_LegStart, UL_LegEnd, boneColor, 1.8f); // Left Leg_Up
-			ImVec2 ML_LegStart(centerPos.x + 65, centerPos.y + 70);
-			ImVec2 ML_LegEnd(centerPos.x + 60, centerPos.y + 100);
-			ImGui::GetWindowDrawList()->AddLine(ML_LegStart, ML_LegEnd, boneColor, 1.8f); // Left Leg_Mid
-			ImVec2 DL_LegStart(centerPos.x + 60, centerPos.y + 100);
-			ImVec2 DL_LegEnd(centerPos.x + 68, centerPos.y + 145);
-			ImGui::GetWindowDrawList()->AddLine(DL_LegStart, DL_LegEnd, boneColor, 1.8f); // Left Leg_Down
-			ImVec2 UR_LegStart(centerPos.x + 62, centerPos.y + 65);
-			ImVec2 UR_LegEnd(centerPos.x + 35, centerPos.y + 100);
-			ImGui::GetWindowDrawList()->AddLine(UR_LegStart, UR_LegEnd, boneColor, 1.8f); // Right Leg_Up
-			ImVec2 DR_LegStart(centerPos.x + 35, centerPos.y + 100);
-			ImVec2 DR_LegEnd(centerPos.x + 47, centerPos.y + 130);
-			ImGui::GetWindowDrawList()->AddLine(DR_LegStart, DR_LegEnd, boneColor, 1.8f); // Right Leg_Down
-			ImVec2 L_ScapulaStart(centerPos.x + 50, centerPos.y + 25);
-			ImVec2 L_ScapulaEnd(centerPos.x + 60, centerPos.y + 30);
-			ImGui::GetWindowDrawList()->AddLine(L_ScapulaStart, L_ScapulaEnd, boneColor, 1.8f); // Left Scapula
-			ImVec2 UL_ArmStart(centerPos.x + 60, centerPos.y + 30);
-			ImVec2 UL_ArmEnd(centerPos.x + 45, centerPos.y + 55);
-			ImGui::GetWindowDrawList()->AddLine(UL_ArmStart, UL_ArmEnd, boneColor, 1.8f); // Left Arm_Up
-			ImVec2 DL_ArmStart(centerPos.x + 45, centerPos.y + 55);
-			ImVec2 DL_ArmEnd(centerPos.x + 25, centerPos.y + 45);
-			ImGui::GetWindowDrawList()->AddLine(DL_ArmStart, DL_ArmEnd, boneColor, 1.8f); // Left Arm_Down
-			ImVec2 R_ScapulaStart(centerPos.x + 50, centerPos.y + 25);
-			ImVec2 R_ScapulaEnd(centerPos.x + 40, centerPos.y + 30);
-			ImGui::GetWindowDrawList()->AddLine(R_ScapulaStart, R_ScapulaEnd, boneColor, 1.8f); // Right Scapula
-			ImVec2 UR_ArmStart(centerPos.x + 40, centerPos.y + 30);
-			ImVec2 UR_ArmEnd(centerPos.x + 27, centerPos.y + 53);
-			ImGui::GetWindowDrawList()->AddLine(UR_ArmStart, UR_ArmEnd, boneColor, 1.8f); // Right Arm_Up
-			ImVec2 DR_ArmStart(centerPos.x + 27, centerPos.y + 53);
-			ImVec2 DR_ArmEnd(centerPos.x + 20, centerPos.y + 45);
-			ImGui::GetWindowDrawList()->AddLine(DR_ArmStart, DR_ArmEnd, boneColor, 1.8f); // Right Arm_Down
-		}
-		if (ESPConfig::ShowHeadBox) 
-		{
-			ImGui::GetWindowDrawList()->AddCircle({ centerPos.x + 44, centerPos.y + 17 }, 12.0f, ESPConfig::HeadBoxColor, 0, 1.8f);
-		}
+        const ImVec2 rectSize(100, 150);
+        const ImVec2 rectPos((windowSize.x - rectSize.x) * 0.45f, (windowSize.y - rectSize.y) * 0.3f);
+        ImVec2 centerPos = ImGui::GetCursorScreenPos();
+        centerPos.x += rectPos.x;
+        centerPos.y += rectPos.y * -1.20f;
 
-		if (ESPConfig::FilledBox) {
-			ImVec2 rectStartPos;
-			ImVec2 rectEndPos;
-			ImColor filledBoxColor = { ESPConfig::FilledColor.Value.x, ESPConfig::FilledColor.Value.y, ESPConfig::FilledColor.Value.z, ESPConfig::FilledColor.Value.w };
-			ImColor filledBoxColor2 = { ESPConfig::FilledColor2.Value.x, ESPConfig::FilledColor2.Value.y, ESPConfig::FilledColor2.Value.z, ESPConfig::FilledColor2.Value.w };
+        if (ESPConfig::ShowEyeRay) {
+            const ImU32 eyeColor = ESPConfig::EyeRayColor;
+            const ImVec2 lineStart(centerPos.x + 44, centerPos.y + 15);
+            const ImVec2 lineEnd(centerPos.x - 10, centerPos.y + 20);
+            drawList->AddLine(lineStart, lineEnd, eyeColor, 2.0f);
+        }
 
-			rectStartPos = centerPos;
-			rectEndPos = { rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y };
+        if (ESPConfig::ShowBoneESP) {
+            const ImU32 boneColor = ESPConfig::BoneColor;
+            struct BoneSegment { ImVec2 startOffset, endOffset; };
+            const BoneSegment segments[] = {
+                { {50, 25}, {60, 55} },   // Neck to Spine
+                { {60, 55}, {62, 65} },   // Spine to Pelvis
+                { {62, 65}, {65, 70} },   // Left Leg Up
+                { {65, 70}, {60, 100} },  // Left Leg Mid
+                { {60, 100}, {68, 145} }, // Left Leg Down
+                { {62, 65}, {35, 100} },  // Right Leg Up
+                { {35, 100}, {47, 130} }, // Right Leg Down
+                { {50, 25}, {60, 30} },   // Left Scapula
+                { {60, 30}, {45, 55} },   // Left Arm Up
+                { {45, 55}, {25, 45} },   // Left Arm Down
+                { {50, 25}, {40, 30} },   // Right Scapula
+                { {40, 30}, {27, 53} },   // Right Arm Up
+                { {27, 53}, {20, 45} }    // Right Arm Down
+            };
+            for (const auto& seg : segments) {
+                ImVec2 start(centerPos.x + seg.startOffset.x, centerPos.y + seg.startOffset.y);
+                ImVec2 end(centerPos.x + seg.endOffset.x, centerPos.y + seg.endOffset.y);
+                drawList->AddLine(start, end, boneColor, 1.8f);
+            }
+        }
 
-			if (ESPConfig::MultiColor)
-				ImGui::GetWindowDrawList()->AddRectFilledMultiColorRounded(rectStartPos, rectEndPos, ImGui::GetColorU32(ImGuiCol_ChildBg), filledBoxColor, filledBoxColor, filledBoxColor2, filledBoxColor2, ESPConfig::BoxRounding, ImDrawCornerFlags_All);
-		}
+        if (ESPConfig::ShowHeadBox) {
+            drawList->AddCircle({ centerPos.x + 44, centerPos.y + 17 }, 12.0f, ESPConfig::HeadBoxColor, 0, 1.8f);
+        }
 
-		if (ESPConfig::ShowBoxESP) {
-			ImVec2 rectStartPos;
-			ImVec2 rectEndPos;
-			ImColor boxColor = ESPConfig::BoxColor;
+        if (ESPConfig::FilledBox) {
+            const ImColor filledColor(ESPConfig::FilledColor.Value.x, ESPConfig::FilledColor.Value.y,
+                ESPConfig::FilledColor.Value.z, ESPConfig::FilledColor.Value.w);
+            const ImColor filledColor2(ESPConfig::FilledColor2.Value.x, ESPConfig::FilledColor2.Value.y,
+                ESPConfig::FilledColor2.Value.z, ESPConfig::FilledColor2.Value.w);
+            const ImVec2 rectStart = centerPos;
+            const ImVec2 rectEnd = { rectStart.x + rectSize.x, rectStart.y + rectSize.y };
 
-			rectStartPos = centerPos;
-			rectEndPos = { rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y };
+            if (ESPConfig::MultiColor)
+            {
+                drawList->AddRectFilledMultiColorRounded(rectStart, rectEnd,
+                    ImGui::GetColorU32(ImGuiCol_ChildBg),
+                    filledColor, filledColor,
+                    filledColor2, filledColor2,
+                    ESPConfig::BoxRounding, ImDrawCornerFlags_All);
+            }
+        }
 
-			switch (ESPConfig::BoxType)
-			{
-			case 0:
-				DrawPreviewBox(rectStartPos, rectEndPos, boxColor, ESPConfig::BoxRounding, 1.3f, false);
-				break;
-			//case 1:
-			//	//DrawPreviewBox(rectStartPos, rectEndPos, boxColor, ESPConfig::BoxRounding, 1.3f, false);
-			//	rectStartPos = { centerPos.x + 20, centerPos.y+ 3};
-			//	rectEndPos = { rectStartPos.x + 50, rectStartPos.y + 141 };
-			//	DrawPreviewBox(rectStartPos, rectEndPos, boxColor, ESPConfig::BoxRounding, 1.0f, false);
-			//	break;
-			case 1:
-				ImGui::GetWindowDrawList()->AddLine(rectStartPos, { rectStartPos.x + rectSize.x * 0.25f, rectStartPos.y }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine(rectStartPos, { rectStartPos.x, rectStartPos.y + rectSize.y * 0.25f }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y }, { rectStartPos.x + rectSize.x * 0.75f, rectStartPos.y + rectSize.y }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y }, { rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y * 0.75f }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x, rectStartPos.y + rectSize.y }, { rectStartPos.x + rectSize.x * 0.25f, rectStartPos.y + rectSize.y }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x, rectStartPos.y + rectSize.y }, { rectStartPos.x, rectStartPos.y + rectSize.y * 0.75f }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x + rectSize.x, rectStartPos.y }, { rectStartPos.x + rectSize.x * 0.75f, rectStartPos.y }, boxColor, 1.3f);
-				ImGui::GetWindowDrawList()->AddLine({ rectStartPos.x + rectSize.x, rectStartPos.y }, { rectStartPos.x + rectSize.x, rectStartPos.y + rectSize.y * 0.25f }, boxColor, 1.3f);
-				break;
-			}
-		}
-		if (ESPConfig::ShowHealthBar) {
-			ImU32 greenColor = IM_COL32(0, 255, 0, 255);
-			ImVec2 HBPos = centerPos;
-			ImVec2 HBSize = rectSize;
-			ImVec2 HBS(HBPos.x - 6, HBPos.y);
-			ImVec2 HBE(HBPos.x - 3, HBPos.y + HBSize.y);
-			ImGui::GetWindowDrawList()->AddRectFilled(HBS, HBE, greenColor, 0.0f, ImDrawCornerFlags_All);
-		}
-		if (ESPConfig::ArmorBar) {
-			ImU32 blueColor = IM_COL32(0, 128, 255, 255);
-			ImVec2 ABPos = centerPos;
-			ImVec2 ABSize = rectSize;
+        if (ESPConfig::ShowBoxESP) {
+            const ImColor boxColor = ESPConfig::BoxColor;
+            const ImVec2 rectStart = centerPos;
+            const ImVec2 rectEnd = { rectStart.x + rectSize.x, rectStart.y + rectSize.y };
 
-			ImVec2 ABS(ABPos.x - 9, ABPos.y);
-			ImVec2 ABE(ABPos.x - 6, ABPos.y + ABSize.y);
-			ImGui::GetWindowDrawList()->AddRectFilled(ABS, ABE, blueColor, 0.0f, ImDrawCornerFlags_All);
+            switch (ESPConfig::BoxType)
+            {
+            case 0:
+                DrawPreviewBox(rectStart, rectEnd, boxColor, ESPConfig::BoxRounding, 1.3f, false);
+                break;
+            case 1: {
+                const float quarterX = rectSize.x * 0.25f;
+                const float quarterY = rectSize.y * 0.25f;
+                struct LineSeg { ImVec2 p1, p2; };
+                const LineSeg segs[] = {
+                    { rectStart, { rectStart.x + quarterX, rectStart.y } },
+                    { rectStart, { rectStart.x, rectStart.y + quarterY } },
+                    { { rectStart.x + rectSize.x, rectStart.y + rectSize.y },
+                      { rectStart.x + rectSize.x * 0.75f, rectStart.y + rectSize.y } },
+                    { { rectStart.x + rectSize.x, rectStart.y + rectSize.y },
+                      { rectStart.x + rectSize.x, rectStart.y + rectSize.y * 0.75f } },
+                    { { rectStart.x, rectStart.y + rectSize.y },
+                      { rectStart.x + quarterX, rectStart.y + rectSize.y } },
+                    { { rectStart.x, rectStart.y + rectSize.y },
+                      { rectStart.x, rectStart.y + rectSize.y * 0.75f } },
+                    { { rectStart.x + rectSize.x, rectStart.y },
+                      { rectStart.x + rectSize.x * 0.75f, rectStart.y } },
+                    { { rectStart.x + rectSize.x, rectStart.y },
+                      { rectStart.x + rectSize.x, rectStart.y + quarterY } }
+                };
+                for (const auto& seg : segs)
+                    drawList->AddLine(seg.p1, seg.p2, boxColor, 1.3f);
+                break;
+            }
+            }
+        }
 
-		}
-		if (ESPConfig::AmmoBar) {
-			ImU32 yellowColor = IM_COL32(255, 255, 0, 255);
-			ImVec2 ABS(centerPos.x, centerPos.y + rectSize.y + 2);
-			ImVec2 ABE(centerPos.x + rectSize.x, centerPos.y + rectSize.y + 5);
-			ImGui::GetWindowDrawList()->AddRectFilled(ABS, ABE, yellowColor, 0.0f, ImDrawCornerFlags_All);
-		}
+        if (ESPConfig::ShowHealthBar) {
+            const ImU32 greenColor = IM_COL32(0, 255, 0, 255);
+            const ImVec2 HBPos = centerPos;
+            const ImVec2 HBSize = rectSize;
+            const ImVec2 HBS(HBPos.x - 6, HBPos.y);
+            const ImVec2 HBE(HBPos.x - 3, HBPos.y + HBSize.y);
+            drawList->AddRectFilled(HBS, HBE, greenColor, 0.0f, ImDrawCornerFlags_All);
+        }
+        if (ESPConfig::ArmorBar) {
+            const ImU32 blueColor = IM_COL32(0, 128, 255, 255);
+            const ImVec2 ABPos = centerPos;
+            const ImVec2 ABSize = rectSize;
+            const ImVec2 ABS(ABPos.x - 9, ABPos.y);
+            const ImVec2 ABE(ABPos.x - 6, ABPos.y + ABSize.y);
+            drawList->AddRectFilled(ABS, ABE, blueColor, 0.0f, ImDrawCornerFlags_All);
+        }
+        if (ESPConfig::AmmoBar) {
+            const ImU32 yellowColor = IM_COL32(255, 255, 0, 255);
+            const ImVec2 ABS(centerPos.x, centerPos.y + rectSize.y + 2);
+            const ImVec2 ABE(centerPos.x + rectSize.x, centerPos.y + rectSize.y + 5);
+            drawList->AddRectFilled(ABS, ABE, yellowColor, 0.0f, ImDrawCornerFlags_All);
+        }
 
-		if (ESPConfig::ShowLineToEnemy) {
-			ImVec2 LineStart, LineEnd;
-			LineStart = { centerPos.x + rectSize.x / 2 , centerPos.y };
-			switch (ESPConfig::LinePos)
-			{
-			case 0:
-				LineEnd = { LineStart.x, LineStart.y - 50 };
-				break;
-			case 1:
-				LineEnd = { Gui.Window.Size.x / 2, Gui.Window.Size.y / 2 };
-				break;
-			case 2:
-				LineStart = { centerPos.x + rectSize.x / 2 , centerPos.y + rectSize.y };
-				LineEnd = { LineStart.x, LineStart.y + 20.f };
-				break;
-			}
-			ImGui::GetWindowDrawList()->AddLine(LineStart, LineEnd, ESPConfig::LineToEnemyColor, 1.8f);
-		}
-		if (ESPConfig::ShowPlayerName) {
-			ImVec2 textPos(centerPos.x + 36, centerPos.y -12);
-			ImGui::GetWindowDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[0], 12.0f, textPos, IM_COL32(255, 255, 255, 255), "Player");
-		}
-		if (ESPConfig::ShowDistance) {
-			ImVec2 textPos(centerPos.x + 105, centerPos.y);
-			ImGui::GetWindowDrawList()->AddText(textPos, IM_COL32(0, 98, 98, 255), "108m");
-		}
-		if (ESPConfig::ShowWeaponESP) {
-			ImVec2 textPos(0, 0);
-			if (ESPConfig::AmmoBar)
-				centerPos.y += 5;
-			textPos = { centerPos.x + 35, centerPos.y + 150 };
-			ImGui::GetWindowDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 12.0f, textPos, IM_COL32(255, 255, 255, 255), "W");
-		}
+        if (ESPConfig::ShowLineToEnemy) {
+            ImVec2 lineStart = { centerPos.x + rectSize.x / 2, centerPos.y };
+            ImVec2 lineEnd;
+            switch (ESPConfig::LinePos)
+            {
+            case 0:
+                lineEnd = { lineStart.x, lineStart.y - 50 };
+                break;
+            case 1:
+                lineEnd = { Gui.Window.Size.x / 2, Gui.Window.Size.y / 2 };
+                break;
+            case 2:
+                lineStart = { centerPos.x + rectSize.x / 2, centerPos.y + rectSize.y };
+                lineEnd = { lineStart.x, lineStart.y + 20.f };
+                break;
+            }
+            drawList->AddLine(lineStart, lineEnd, ESPConfig::LineToEnemyColor, 1.8f);
+        }
 
-		if (ESPConfig::ShowIsScoped) {
-			ImGui::GetWindowDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 15.0f, centerPos, IM_COL32(131, 137, 150, 255), "s");
-		}
-	}
+        if (ESPConfig::ShowPlayerName) {
+            const ImVec2 textPos(centerPos.x + 36, centerPos.y - 12);
+            drawList->AddText(font0, 12.0f, textPos, IM_COL32(255, 255, 255, 255), "Player");
+        }
+        if (ESPConfig::ShowDistance) {
+            const ImVec2 textPos(centerPos.x + 105, centerPos.y);
+            drawList->AddText(textPos, IM_COL32(0, 98, 98, 255), "108m");
+        }
+        if (ESPConfig::ShowWeaponESP) {
+            if (ESPConfig::AmmoBar)
+                centerPos.y += 5;
+            const ImVec2 textPos(centerPos.x + 35, centerPos.y + 150);
+            drawList->AddText(font1, 12.0f, textPos, IM_COL32(255, 255, 255, 255), "W");
+        }
+        if (ESPConfig::ShowIsScoped) {
+            drawList->AddText(font1, 15.0f, centerPos, IM_COL32(131, 137, 150, 255), "s");
+        }
+    }
 }

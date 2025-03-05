@@ -2,12 +2,22 @@
 
 Vec2 RevolveCoordinatesSystem(float RevolveAngle, Vec2 OriginPos, Vec2 DestPos)
 {
-	Vec2 ResultPos;
-	if (RevolveAngle == 0)
-		return DestPos;
-	ResultPos.x = OriginPos.x + (DestPos.x - OriginPos.x) * cos(RevolveAngle * M_PI / 180) + (DestPos.y - OriginPos.y) * sin(RevolveAngle * M_PI / 180);
-	ResultPos.y = OriginPos.y - (DestPos.x - OriginPos.x) * sin(RevolveAngle * M_PI / 180) + (DestPos.y - OriginPos.y) * cos(RevolveAngle * M_PI / 180);
-	return ResultPos;
+    if (RevolveAngle == 0)
+        return DestPos;
+
+    // Convert angle to radians once
+    float rad = RevolveAngle * (M_PI / 180.0f);
+    float cosVal = cos(rad);
+    float sinVal = sin(rad);
+
+    // Cache differences
+    float dx = DestPos.x - OriginPos.x;
+    float dy = DestPos.y - OriginPos.y;
+
+    Vec2 ResultPos;
+    ResultPos.x = OriginPos.x + dx * cosVal + dy * sinVal;
+    ResultPos.y = OriginPos.y - dx * sinVal + dy * cosVal;
+    return ResultPos;
 }
 
 
@@ -53,34 +63,29 @@ void Base_Radar::SetDrawList(ImDrawList* DrawList)
 
 void Base_Radar::AddPoint(const Vec3& LocalPos, const float& LocalYaw, const Vec3& Pos, ImColor Color, int Type, float Yaw)
 {
-	Vec2 PointPos;
-	float Distance;
-	float Angle;
+    this->LocalYaw = LocalYaw;
 
-	this->LocalYaw = LocalYaw;
+    float dx = LocalPos.x - Pos.x;
+    float dy = LocalPos.y - Pos.y;
+    float distance = sqrt(dx * dx + dy * dy);
 
-	Distance = sqrt(pow(LocalPos.x - Pos.x, 2) + pow(LocalPos.y - Pos.y, 2));
+    float angleRad = (LocalYaw * (M_PI / 180.0f)) - atan2(Pos.y - LocalPos.y, Pos.x - LocalPos.x);
 
-	Angle = atan2(Pos.y - LocalPos.y, Pos.x - LocalPos.x) * 180 / M_PI;
-	Angle = (this->LocalYaw - Angle) * M_PI / 180;
+    const float scale = (2.0f * this->RenderRange) / this->Proportion;
+    distance *= scale;
 
-	Distance = Distance / this->Proportion * this->RenderRange * 2;
+    Vec2 PointPos;
+    PointPos.x = this->Pos.x + distance * sin(angleRad);
+    PointPos.y = this->Pos.y - distance * cos(angleRad);
 
-	PointPos.x = this->Pos.x + Distance * sin(Angle);
-	PointPos.y = this->Pos.y - Distance * cos(Angle);
-	
-	// Circle range
-	//Distance = sqrt(pow(this->Pos.x - PointPos.x, 2) + pow(this->Pos.y - PointPos.y, 2));
-	//if (Distance > this->RenderRange)
-	//	return;
+    const float renderRange = this->RenderRange;
+    if (PointPos.x < this->Pos.x - renderRange || PointPos.x > this->Pos.x + renderRange ||
+        PointPos.y > this->Pos.y + renderRange || PointPos.y < this->Pos.y - renderRange)
+    {
+        return;
+    }
 
-	// Rectangle range
-	if (PointPos.x < this->Pos.x - RenderRange || PointPos.x > this->Pos.x + RenderRange
-		|| PointPos.y > this->Pos.y + RenderRange || PointPos.y < this->Pos.y - RenderRange)
-		return;
-
-	std::tuple<Vec2, ImColor, int, float> Data(PointPos, Color, Type, Yaw);
-	this->Points.push_back(Data);
+    this->Points.push_back(std::make_tuple(PointPos, Color, Type, Yaw));
 }
 
 void DrawTriangle(Vec2 Center, ImColor Color, float Width, float Height, float Yaw)
@@ -102,94 +107,94 @@ void DrawTriangle(Vec2 Center, ImColor Color, float Width, float Height, float Y
 
 void Base_Radar::Render()
 {
-	if (Width <= 0)
-		return;
+    if (Width <= 0)
+        return;
 
-	// Cross
-	std::pair<Vec2, Vec2> Line1;
-	std::pair<Vec2, Vec2> Line2;
+    const Vec2 pos = this->Pos;
+    const float halfWidth = this->Width * 0.5f;
 
-	Line1.first = Vec2(this->Pos.x - this->Width / 2, this->Pos.y);
-	Line1.second = Vec2(this->Pos.x + this->Width / 2, this->Pos.y);
-	Line2.first = Vec2(this->Pos.x, this->Pos.y - this->Width / 2);
-	Line2.second = Vec2(this->Pos.x, this->Pos.y + this->Width / 2);
+    const ImVec2 crossLine1Start = Vec2(pos.x - halfWidth, pos.y).ToImVec2();
+    const ImVec2 crossLine1End = Vec2(pos.x + halfWidth, pos.y).ToImVec2();
+    const ImVec2 crossLine2Start = Vec2(pos.x, pos.y - halfWidth).ToImVec2();
+    const ImVec2 crossLine2End = Vec2(pos.x, pos.y + halfWidth).ToImVec2();
 
-	if (this->Opened)
-	{
-		if (this->ShowCrossLine)
-		{
-			this->DrawList->AddLine(Line1.first.ToImVec2(), Line1.second.ToImVec2(), this->CrossColor, 1);
-			this->DrawList->AddLine(Line2.first.ToImVec2(), Line2.second.ToImVec2(), this->CrossColor, 1);
-		}
+    if (this->Opened)
+    {
+        if (this->ShowCrossLine)
+        {
+            this->DrawList->AddLine(crossLine1Start, crossLine1End, this->CrossColor, 1);
+            this->DrawList->AddLine(crossLine2Start, crossLine2End, this->CrossColor, 1);
+        }
 
-		for (auto PointSingle : this->Points)
-		{
-			Vec2	PointPos = std::get<0>(PointSingle);
-			ImColor PointColor = std::get<1>(PointSingle);
-			int		PointType = std::get<2>(PointSingle);
-			float	PointYaw = std::get<3>(PointSingle);
-			if (PointType == 0)
-			{
-				this->DrawList->AddCircle(PointPos.ToImVec2(), this->CircleSize, PointColor);
-				this->DrawList->AddCircleFilled(PointPos.ToImVec2(), this->CircleSize, ImColor(0, 0, 0));
-			}
-			else if (PointType == 1)
-			{
-				Vec2 a, b, c;
-				Vec2 Re_a, Re_b, Re_c;
-				Vec2 Re_Point;
-				float Angle = (this->LocalYaw - PointYaw) + 180;
-				Re_Point = RevolveCoordinatesSystem(Angle, this->Pos, PointPos);
+        const float degToRad = static_cast<float>(M_PI) / 180.0f;
 
-				Re_a = Vec2(Re_Point.x, Re_Point.y + this->ArrowSize);
-				Re_b = Vec2(Re_Point.x - this->ArrowSize / 1.5, Re_Point.y - this->ArrowSize / 2);
-				Re_c = Vec2(Re_Point.x + this->ArrowSize / 1.5, Re_Point.y - this->ArrowSize / 2);
+        for (const auto& pointSingle : this->Points)
+        {
+            Vec2 pointPos = std::get<0>(pointSingle);
+            const ImColor pointColor = std::get<1>(pointSingle);
+            const int pointType = std::get<2>(pointSingle);
+            const float pointYaw = std::get<3>(pointSingle);
+            const ImVec2 imPointPos = pointPos.ToImVec2();
 
-				a = RevolveCoordinatesSystem(-Angle, this->Pos, Re_a);
-				b = RevolveCoordinatesSystem(-Angle, this->Pos, Re_b);
-				c = RevolveCoordinatesSystem(-Angle, this->Pos, Re_c);
+            if (pointType == 0)
+            {
+                this->DrawList->AddCircle(imPointPos, this->CircleSize, pointColor);
+                this->DrawList->AddCircleFilled(imPointPos, this->CircleSize, ImColor(0, 0, 0));
+            }
+            else if (pointType == 1)
+            {
+                const float angle = (this->LocalYaw - pointYaw) + 180.0f;
+                const Vec2 rePoint = RevolveCoordinatesSystem(angle, pos, pointPos);
 
-				this->DrawList->AddQuadFilled(
-					ImVec2(a.x, a.y),
-					ImVec2(b.x, b.y),
-					ImVec2(PointPos.x, PointPos.y),
-					ImVec2(c.x, c.y),
-					PointColor
-				);
-				this->DrawList->AddQuad(
-					ImVec2(a.x, a.y),
-					ImVec2(b.x, b.y),
-					ImVec2(PointPos.x, PointPos.y),
-					ImVec2(c.x, c.y),
-					ImColor(0, 0, 0, 150),
-					0.1
-				);
-			}
-			else
-			{
-				ImVec2 TrianglePoint, TrianglePoint_1, TrianglePoint_2;
-				float Angle = (this->LocalYaw - PointYaw) - 90;
+                const Vec2 re_a(rePoint.x, rePoint.y + this->ArrowSize);
+                const Vec2 re_b(rePoint.x - this->ArrowSize / 1.5f, rePoint.y - this->ArrowSize / 2.0f);
+                const Vec2 re_c(rePoint.x + this->ArrowSize / 1.5f, rePoint.y - this->ArrowSize / 2.0f);
 
-				this->DrawList->AddCircleFilled(PointPos.ToImVec2(), 0.85 * this->ArcArrowSize, PointColor, 30);
-				this->DrawList->AddCircle(PointPos.ToImVec2(), 0.95 * this->ArcArrowSize, ImColor(0, 0, 0, 150), 0, 0.1);
+                const Vec2 a = RevolveCoordinatesSystem(-angle, pos, re_a);
+                const Vec2 b = RevolveCoordinatesSystem(-angle, pos, re_b);
+                const Vec2 c = RevolveCoordinatesSystem(-angle, pos, re_c);
 
-				TrianglePoint.x = PointPos.x + (this->ArcArrowSize + this->ArcArrowSize / 3) * cos(-Angle * M_PI / 180);
-				TrianglePoint.y = PointPos.y - (this->ArcArrowSize + this->ArcArrowSize / 3) * sin(-Angle * M_PI / 180);
+                this->DrawList->AddQuadFilled(
+                    ImVec2(a.x, a.y),
+                    ImVec2(b.x, b.y),
+                    imPointPos,
+                    ImVec2(c.x, c.y),
+                    pointColor
+                );
+                this->DrawList->AddQuad(
+                    ImVec2(a.x, a.y),
+                    ImVec2(b.x, b.y),
+                    imPointPos,
+                    ImVec2(c.x, c.y),
+                    ImColor(0, 0, 0, 150),
+                    0.1f
+                );
+            }
+            else
+            {
+                const float angle = (this->LocalYaw - pointYaw) - 90.0f;
+                this->DrawList->AddCircleFilled(imPointPos, 0.85f * this->ArcArrowSize, pointColor, 30);
+                this->DrawList->AddCircle(imPointPos, 0.95f * this->ArcArrowSize, ImColor(0, 0, 0, 150), 0, 0.1f);
 
-				TrianglePoint_1.x = PointPos.x + this->ArcArrowSize * cos(-(Angle - 30) * M_PI / 180);
-				TrianglePoint_1.y = PointPos.y - this->ArcArrowSize * sin(-(Angle - 30) * M_PI / 180);
+                ImVec2 trianglePoint;
+                trianglePoint.x = pointPos.x + (this->ArcArrowSize + this->ArcArrowSize / 3.0f) * cosf(-angle * degToRad);
+                trianglePoint.y = pointPos.y - (this->ArcArrowSize + this->ArcArrowSize / 3.0f) * sinf(-angle * degToRad);
 
-				TrianglePoint_2.x = PointPos.x + this->ArcArrowSize * cos(-(Angle + 30) * M_PI / 180);
-				TrianglePoint_2.y = PointPos.y - this->ArcArrowSize * sin(-(Angle + 30) * M_PI / 180);
+                ImVec2 trianglePoint1;
+                trianglePoint1.x = pointPos.x + this->ArcArrowSize * cosf(-(angle - 30.0f) * degToRad);
+                trianglePoint1.y = pointPos.y - this->ArcArrowSize * sinf(-(angle - 30.0f) * degToRad);
 
-				this->DrawList->PathLineTo(TrianglePoint);
-				this->DrawList->PathLineTo(TrianglePoint_1);
-				this->DrawList->PathLineTo(TrianglePoint_2);
-				this->DrawList->PathFillConvex(ImColor(220, 220, 220, 240));
-			}
-		}
-	}
+                ImVec2 trianglePoint2;
+                trianglePoint2.x = pointPos.x + this->ArcArrowSize * cosf(-(angle + 30.0f) * degToRad);
+                trianglePoint2.y = pointPos.y - this->ArcArrowSize * sinf(-(angle + 30.0f) * degToRad);
 
-	if (this->Points.size() > 0)
-		this->Points.clear();
+                this->DrawList->PathLineTo(trianglePoint);
+                this->DrawList->PathLineTo(trianglePoint1);
+                this->DrawList->PathLineTo(trianglePoint2);
+                this->DrawList->PathFillConvex(ImColor(220, 220, 220, 240));
+            }
+        }
+    }
+
+    this->Points.clear();
 }
