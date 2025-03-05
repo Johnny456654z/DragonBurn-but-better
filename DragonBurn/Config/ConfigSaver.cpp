@@ -388,7 +388,7 @@ namespace MyConfigSaver
             LegitBotConfig::VisibleCheck = ReadData(ConfigData["Aimbot"],{"VisibleCheck"}, true);
             AimControl::IgnoreFlash = ReadData(ConfigData["Aimbot"],{"IgnoreFlash"}, false);
             AimControl::ScopeOnly = ReadData(ConfigData["Aimbot"],{"ScopeOnly"}, false);
-            AimControl::onlyAuto = ReadData(ConfigData["Aimbot"], { "OnlyAuto" }, true);
+            AimControl::onlyAuto = ReadData(ConfigData["Aimbot"], { "OnlyAuto" }, false);
             Text::Aimbot::HotKey = KeyMgr::GetKeyName(AimControl::HotKey);
             LegitBotConfig::HitboxUpdated = false;
         }

@@ -29,7 +29,7 @@ namespace AimControl
     inline float Smooth = 5.0f;
     inline std::vector<int> HitboxList{ BONEINDEX::head };
     inline bool HasTarget = false;
-    inline bool onlyAuto = true;
+    inline bool onlyAuto = false;
 
 
     void AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& AimPosList);
