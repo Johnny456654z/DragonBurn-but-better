@@ -215,7 +215,7 @@ namespace ConfigMenu {
 		RCS::RCSBullet = 1;
 
 		RCS::RCSScale = ImVec2(1.4f, 1.4f);
-		AimControl::onlyAuto = true;
+		AimControl::onlyAuto = false;
 		AimControl::ScopeOnly = true;
 		AimControl::AimBullet = 1;
 
