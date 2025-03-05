@@ -5,7 +5,7 @@
 namespace MenuConfig
 {
 	inline std::string name = "DragonBurn";
-	inline std::string version = "2.0.5.0-pre";
+	inline std::string version = "2.0.5.0";
 	inline std::string author = "ByteCorum";
 
 	inline std::string path = "";
@@ -17,14 +17,14 @@ namespace MenuConfig
 	struct {
 		// 0: Visual 1: Aimbot 2: Misc 3: Config
 		int MenuPage = 0;
-		ImVec2 MainWinSize          = ImVec2(600.f,500.f);
-		ImVec2 LogoPos				= ImVec2(0.f, 0.f);
-		ImVec2 Button1Pos			= ImVec2(0.f, 59.f);
-		ImVec2 Button2Pos			= ImVec2(0.f, 118.f);
-		ImVec2 Button3Pos			= ImVec2(0.f, 177.f);
-		ImVec2 Button4Pos			= ImVec2(0.f, 236.f);
-		ImVec2 ChildPos				= ImVec2(60.f, 0.f);
-		ImVec2 ChildSize			= ImVec2(540.f, 500.f);
+		ImVec2 MainWinSize = ImVec2(600.f, 500.f);
+		ImVec2 LogoPos = ImVec2(0.f, 0.f);
+		ImVec2 Button1Pos = ImVec2(0.f, 59.f);
+		ImVec2 Button2Pos = ImVec2(0.f, 118.f);
+		ImVec2 Button3Pos = ImVec2(0.f, 177.f);
+		ImVec2 Button4Pos = ImVec2(0.f, 236.f);
+		ImVec2 ChildPos = ImVec2(60.f, 0.f);
+		ImVec2 ChildSize = ImVec2(540.f, 500.f);
 	} WCS;	// Window Component Settings
 
 	inline bool defaultConfig = false;
@@ -47,7 +47,7 @@ namespace MenuConfig
 	inline int HotKey = VK_END;
 }
 
-namespace LegitBotConfig 
+namespace LegitBotConfig
 {
 	inline bool AimBot = true;
 	inline bool AimAlways = false;
@@ -98,7 +98,7 @@ namespace ESPConfig
 	inline int BoxType = 0;
 	inline float BoxRounding = 5;
 	inline bool ShowLineToEnemy = false;
-	inline ImColor LineToEnemyColor = ImColor(59, 71, 148,180);
+	inline ImColor LineToEnemyColor = ImColor(59, 71, 148, 180);
 	// 0: Top 1: Center 2: Bottom
 	inline int LinePos = 0;
 
