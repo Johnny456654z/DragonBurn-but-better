@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
-#include "../Core/MemoryMgr.h"
-#include "../Offsets/Offsets.h"
+#include "..\Core/MemoryMgr.h"
+#include "..\Offsets/Offsets.h"
 #include "View.h"
 
 class CGame

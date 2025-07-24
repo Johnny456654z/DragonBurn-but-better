@@ -1,9 +1,9 @@
 #pragma once
 #include <chrono>
 
-#include "../Game/Game.h"
-#include "../Game/Entity.h"
-#include "../Core/Config.h"
+#include "..\Game/Game.h"
+#include "..\Game/Entity.h"
+#include "..\Core/Config.h"
 
 namespace TriggerBot
 {

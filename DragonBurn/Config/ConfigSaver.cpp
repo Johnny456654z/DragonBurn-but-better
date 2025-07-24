@@ -3,12 +3,12 @@
 #include <string>
 #include <sstream>
 #include "ConfigSaver.h"
-#include "../Resources/Language.hpp"
-#include "../Core/Config.h"
-#include "../Features/TriggerBot.h"
-#include "../Features/Aimbot.h"
-#include "../Features/RCS.h"
-#include "../Helpers/KeyManager.h"
+#include "..\Resources/Language.hpp"
+#include "..\Core/Config.h"
+#include "..\Features/TriggerBot.h"
+#include "..\Features/Aimbot.h"
+#include "..\Features/RCS.h"
+#include "..\Helpers/KeyManager.h"
 #include <json.hpp>
 
 using json = nlohmann::json;

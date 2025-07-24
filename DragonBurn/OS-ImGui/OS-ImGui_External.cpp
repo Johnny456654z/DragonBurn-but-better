@@ -1,5 +1,5 @@
 #include "OS-ImGui_External.h"
-#include "../Core/Config.h"
+#include "..\Core/Config.h"
 
 // D3D11 Device
 namespace OSImGui

@@ -1,5 +1,5 @@
 #pragma once
-#include "../Resources/Language.hpp"
+#include "..\Resources/Language.hpp"
 
 namespace ConfigMenu {
     void RenderCFGmenu();

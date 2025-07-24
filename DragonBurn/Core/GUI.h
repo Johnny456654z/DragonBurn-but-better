@@ -10,7 +10,7 @@
 
 #include "..\Resources\Language.hpp"
 #include "..\Resources\Images.hpp"
-#include "../Helpers/KeyManager.h"
+#include "..\Helpers\KeyManager.h"
 
 ID3D11ShaderResourceView* Logo = NULL;
 ID3D11ShaderResourceView* MenuButton1 = NULL;

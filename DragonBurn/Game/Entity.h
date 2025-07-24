@@ -2,7 +2,7 @@
 #include "Game.h"
 #include "View.h"
 #include "Bone.h"
-#include "../Core/Globals.h"
+#include "..\Core/Globals.h"
 #include <map>
 
 struct C_UTL_VECTOR

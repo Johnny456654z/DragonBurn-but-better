@@ -1,6 +1,6 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include "../Game/Game.h"
+#include "..\Game/Game.h"
 #include <math.h>
 #include <tuple>
 

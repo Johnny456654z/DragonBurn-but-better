@@ -5,12 +5,12 @@
 #include <map>
 #include <Windows.h>
 #include <unordered_map>
-#include "../Game/Entity.h"
-#include "../Helpers/Format.h"
-#include "../OS-ImGui/imgui/imgui.h"
+#include "..\Game/Entity.h"
+#include "..\Helpers/Format.h"
+#include "..\OS-ImGui/imgui/imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "../OS-ImGui/imgui/imgui_internal.h"
-#include "../Features/TriggerBot.h"
+#include "..\OS-ImGui/imgui/imgui_internal.h"
+#include "..\Features/TriggerBot.h"
 
 namespace Render
 {
@@ -156,7 +156,7 @@ namespace Render
 		const float fovSin = std::sin(fovRadians);
 		const float viewSin = std::sin(viewAngleXRadians);
 
-		// Pre-compute scale factor once (note: sin(90°) is 1, so it is removed)
+		// Pre-compute scale factor once (note: sin(90ï¿½) is 1, so it is removed)
 		const float scaleFactor = Gui.Window.Size.y / (2.0f * fovSin);
 
 		Vec2 Pos;
