@@ -26,10 +26,10 @@ namespace Misc
 		ImGui::GetStyle().WindowRounding = 8.0f;
 		ImGui::Begin("Watermark", nullptr, windowFlags);
 
-		if (MenuConfig::MarkWinChengePos)
+		if (MenuConfig::MarkWinChangePos)
 		{
 			ImGui::SetWindowPos("Watermark", MenuConfig::MarkWinPos);
-			MenuConfig::MarkWinChengePos = false;
+			MenuConfig::MarkWinChangePos = false;
 		}
 
 		Vec3 Pos = LocalPlayer.Pawn.Pos;

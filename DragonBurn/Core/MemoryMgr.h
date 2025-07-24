@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+// Constants for buffer sizes (non-security related)
+constexpr size_t MODULE_NAME_BUFFER_SIZE = 1024;
+constexpr size_t PROCESS_NAME_BUFFER_SIZE = 1024;
+
 #define DRAGON_DEVICE 0x8000
 #define IOCTL_GET_PID CTL_CODE(DRAGON_DEVICE, 0x4452, METHOD_NEITHER, FILE_ANY_ACCESS)
 #define IOCTL_GET_MODULE_BASE CTL_CODE(DRAGON_DEVICE, 0x4462, METHOD_NEITHER, FILE_ANY_ACCESS)
@@ -110,7 +114,7 @@ private:
     typedef struct _PID_PACK
     {
         UINT32 pid;
-        WCHAR name[1024];
+        WCHAR name[PROCESS_NAME_BUFFER_SIZE];
     } PID_PACK, * P_PID_PACK;
 
     // Structure for getting module address base
@@ -118,7 +122,7 @@ private:
         UINT32 pid;
         UINT64 baseAddress;
         SIZE_T size;
-        WCHAR moduleName[1024];
+        WCHAR moduleName[MODULE_NAME_BUFFER_SIZE];
     } MODULE_PACK, * P_MODULE_PACK;
 
     // Structure for writing memory to a process

@@ -76,10 +76,10 @@ namespace bmb
 		ImGui::GetStyle().WindowRounding = 8.0f;
 		ImGui::Begin("Bomb Timer", nullptr, flags);
 
-		if (MenuConfig::BombWinChengePos)
+		if (MenuConfig::BombWinChangePos)
 		{
 			ImGui::SetWindowPos("Bomb Timer", MenuConfig::BombWinPos);
-			MenuConfig::BombWinChengePos = false;
+			MenuConfig::BombWinChangePos = false;
 		}
 
 		float remaining = (40000 - (int64_t)time + plantTime) / (float)1000;

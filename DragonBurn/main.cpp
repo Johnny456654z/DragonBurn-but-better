@@ -24,6 +24,76 @@ using namespace std;
 namespace fs = filesystem;
 string fileName;
 
+// Constants for timing (non-security related)
+constexpr int CS2_CONNECTION_WAIT_MS = 20000;
+constexpr int CONSOLE_HIDE_DELAY_MS = 3000;
+
+// Helper functions for error handling
+void HandleVersionCheckResult(int result)
+{
+	Log::PreviousLine();
+	switch (result)
+	{
+	case 0:
+		Log::Error("Bad internet connection");
+		break;
+	case 1:
+		Log::Error("Failed to get currently supported versions");
+		break;
+	case 2:
+		Log::Error("Your cheat version is out of support");
+		break;
+	case 3:
+		Log::Fine("Your cheat version is up to date and supported");
+		break;
+	default:
+		Log::Error("Unknown connection error");
+		break;
+	}
+}
+
+void HandleOffsetUpdateResult(int result)
+{
+	Log::PreviousLine();
+	switch (result)
+	{
+	case 0:
+		Log::Error("Bad internet connection");
+		break;
+	case 1:
+		Log::Error("Failed to UpdateOffsets");
+		break;
+	case 2:
+		Log::Fine("Offsets updated");
+		break;
+	default:
+		Log::Error("Unknown connection error");
+		break;
+	}
+}
+
+void HandleCS2VersionCheckResult(int result)
+{
+	Log::PreviousLine();
+	switch (result)
+	{
+	case 0:
+		Log::Error("Failed to get the current game version");
+		break;
+	case 1:
+		Log::Warning("Offsets are outdated, we'll update them asap. With current offsets, cheat may work unstable", true);
+		break;
+	case 2:
+		Log::Error("Failed to get cloud version");
+		break;
+	case 3:
+		break; // Success, no message needed
+	default:
+		Log::Error("Failed to get the current game version");
+		break;
+	}
+}
+
 void Cheat();
 
 int main()
@@ -57,64 +127,11 @@ https://github.com/ByteCorum/DragonBurn
 
 #ifndef DBDEBUG
 	Log::Info("Checking cheat version");
-	switch (Init::Verify::CheckCheatVersion())
-	{
-	case 0:
-		Log::PreviousLine();
-		Log::Error("Bad internet connection");
-		break;
-
-	case 1:
-		Log::PreviousLine();
-		Log::Error("Failed to get currently supported versions");
-		break;
-		
-	case 2:
-		Log::PreviousLine();
-		Log::Error("Your cheat version is out of support");
-		break;
-		
-	case 3:
-		Log::PreviousLine();
-		Log::Fine("Your cheat version is up to date and supported");
-		break;
-
-	default:
-		
-		Log::PreviousLine();
-		Log::Error("Unknown connection error");
-		break;
-
-	}
+	HandleVersionCheckResult(Init::Verify::CheckCheatVersion());
 #endif
 
 	Log::Info("Updating offsets");
-	switch (Offset.UpdateOffsets())
-	{
-	case 0:
-		
-		Log::PreviousLine();
-		Log::Error("Bad internet connection");
-		break;
-
-	case 1:
-		
-		Log::PreviousLine();
-		Log::Error("Failed to UpdateOffsets");
-		break;
-
-	case 2:
-		Log::PreviousLine();
-		Log::Fine("Offsets updated");
-		break;
-
-	default:
-		
-		Log::PreviousLine();
-		Log::Error("Unknown connection error");
-		break;
-
-	}
+	HandleOffsetUpdateResult(Offset.UpdateOffsets());
 
 	Log::Info("Connecting to kernel mode driver");
 	if (memoryManager.ConnectDriver(L"\\\\.\\DragonBurn-kernel"))
@@ -141,7 +158,7 @@ https://github.com/ByteCorum/DragonBurn
 	{
 		Log::PreviousLine();
 		Log::Info("Connecting to CS2(it may take some time)");
-		Sleep(20000);
+		Sleep(CS2_CONNECTION_WAIT_MS);
 	}
 
 	Log::PreviousLine();
@@ -149,31 +166,7 @@ https://github.com/ByteCorum/DragonBurn
 	Log::Info("Linking to CS2");
 
 #ifndef DBDEBUG
-	switch (Init::Client::CheckCS2Version()) 
-	{
-	case 0:
-		Log::PreviousLine();
-		Log::Error("Failed to get the current game version");
-		break;
-
-	case 1:
-		Log::PreviousLine();
-		Log::Warning("Offsets are outdated, we'll update them asap. With current offsets, cheat may work unstable", true);
-		break;
-
-	case 2:
-		Log::PreviousLine();
-		Log::Error("Failed to get cloud version");
-		break;
-
-	case 3:
-		break;
-
-	default:
-		Log::PreviousLine();
-		Log::Error("Failed to get the current game version");
-		break;
-	}
+	HandleCS2VersionCheckResult(Init::Client::CheckCS2Version());
 #endif
 
 	if (!memoryManager.Attach(memoryManager.GetProcessID(L"cs2.exe")))
@@ -226,7 +219,7 @@ https://github.com/ByteCorum/DragonBurn
 	Log::Fine("DragonBurn loaded");
 
 #ifndef DBDEBUG
-	Sleep(3000);
+	Sleep(CONSOLE_HIDE_DELAY_MS);
 	ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
 

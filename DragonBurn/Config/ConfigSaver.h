@@ -9,57 +9,80 @@ namespace MyConfigSaver {
     extern void LoadConfig(const std::string& filename);
 
     template <typename T>
-    static T ReadData(nlohmann::json node, std::vector <std::string> keys,T defaultValue)
+    static T ReadData(const nlohmann::json& node, const std::vector<std::string>& keys, const T& defaultValue)
     {
-        T value;
-        for (std::string key : keys)
+        nlohmann::json currentNode = node;
+        
+        for (const auto& key : keys)
         {
-            if (node.contains(key) && !node[key].is_null())
+            if (!currentNode.contains(key) || currentNode[key].is_null())
             {
-                node = node[key];
+                return defaultValue;
             }
-            else
-            {
-                value = defaultValue;
-                return value;
-                break;
-            }
+            currentNode = currentNode[key];
         }
-        value = node.get<T>();
-        return value;
+        
+        try
+        {
+            return currentNode.get<T>();
+        }
+        catch (const nlohmann::json::exception&)
+        {
+            return defaultValue;
+        }
     }
     
     static uint32_t ImColorToUInt32(const ImColor& color)
     {
-        uint32_t r = static_cast<uint32_t>(color.Value.x * 255);
-        uint32_t g = static_cast<uint32_t>(color.Value.y * 255) << 8;
-        uint32_t b = static_cast<uint32_t>(color.Value.z * 255) << 16;
-        uint32_t a = static_cast<uint32_t>(color.Value.w * 255) << 24;
+        constexpr float COLOR_SCALE = 255.0f;
+        
+        uint32_t r = static_cast<uint32_t>(color.Value.x * COLOR_SCALE);
+        uint32_t g = static_cast<uint32_t>(color.Value.y * COLOR_SCALE) << 8;
+        uint32_t b = static_cast<uint32_t>(color.Value.z * COLOR_SCALE) << 16;
+        uint32_t a = static_cast<uint32_t>(color.Value.w * COLOR_SCALE) << 24;
 
         return r | g | b | a;
     }
 
     static ImColor UInt32ToImColor(uint32_t value)
     {
-        ImColor TempColor;
-        TempColor.Value.x = static_cast<float>(value & 0xFF) / 255.0f;
-        TempColor.Value.y = static_cast<float>((value >> 8) & 0xFF) / 255.0f;
-        TempColor.Value.z = static_cast<float>((value >> 16) & 0xFF) / 255.0f;
-        TempColor.Value.w = static_cast<float>((value >> 24) & 0xFF) / 255.0f;
-        return TempColor;
+        constexpr float INV_COLOR_SCALE = 1.0f / 255.0f;
+        
+        ImColor result;
+        result.Value.x = static_cast<float>(value & 0xFF) * INV_COLOR_SCALE;
+        result.Value.y = static_cast<float>((value >> 8) & 0xFF) * INV_COLOR_SCALE;
+        result.Value.z = static_cast<float>((value >> 16) & 0xFF) * INV_COLOR_SCALE;
+        result.Value.w = static_cast<float>((value >> 24) & 0xFF) * INV_COLOR_SCALE;
+        return result;
     }
 
-    static std::vector<int> LoadVector(const nlohmann::json& node, std::string key, std::vector<int> defaultValue) {
-        if (node.contains(key) && !node[key].is_null() && node[key].is_array())
+    static std::vector<int> LoadVector(const nlohmann::json& node, const std::string& key, const std::vector<int>& defaultValue) 
+    {
+        if (!node.contains(key) || node[key].is_null() || !node[key].is_array())
+        {
+            return defaultValue;
+        }
+        
+        try
         {
             std::vector<int> result;
+            result.reserve(node[key].size()); // Pre-allocate for better performance
+            
             for (const auto& element : node[key])
             {
-                result.push_back(element.get<int>());
+                if (element.is_number_integer())
+                {
+                    result.push_back(element.get<int>());
+                }
+                else
+                {
+                    // If any element is invalid, return default value
+                    return defaultValue;
+                }
             }
             return result;
         }
-        else
+        catch (const nlohmann::json::exception&)
         {
             return defaultValue;
         }

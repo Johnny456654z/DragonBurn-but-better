@@ -167,6 +167,15 @@ namespace MyConfigSaver
         ConfigData["Aimbot"]["CircleColor"]["b"]= LegitBotConfig::FovCircleColor.Value.z;
         ConfigData["Aimbot"]["CircleColor"]["a"]= LegitBotConfig::FovCircleColor.Value.w;
 
+        // Precision Mode Settings
+        ConfigData["Aimbot"]["PrecisionMode"]=        AimControl::PrecisionMode;
+        ConfigData["Aimbot"]["PredictiveAiming"]=     AimControl::PredictiveAiming;
+        ConfigData["Aimbot"]["InstantLock"]=          AimControl::InstantLock;
+        ConfigData["Aimbot"]["HeadshotOnly"]=         AimControl::HeadshotOnly;
+        ConfigData["Aimbot"]["AdaptiveSmoothing"]=    AimControl::AdaptiveSmoothing;
+        ConfigData["Aimbot"]["MicroAdjustments"]=     AimControl::MicroAdjustments;
+        ConfigData["Aimbot"]["PrecisionThreshold"]=   AimControl::PrecisionThreshold;
+
 
 
         ConfigData["RCS"]["Enable"]=           LegitBotConfig::RCS;
@@ -389,6 +398,16 @@ namespace MyConfigSaver
             AimControl::IgnoreFlash = ReadData(ConfigData["Aimbot"],{"IgnoreFlash"}, false);
             AimControl::ScopeOnly = ReadData(ConfigData["Aimbot"],{"ScopeOnly"}, false);
             AimControl::onlyAuto = ReadData(ConfigData["Aimbot"], { "OnlyAuto" }, false);
+            
+            // Load Precision Mode Settings
+            AimControl::PrecisionMode = ReadData(ConfigData["Aimbot"], { "PrecisionMode" }, false);
+            AimControl::PredictiveAiming = ReadData(ConfigData["Aimbot"], { "PredictiveAiming" }, false);
+            AimControl::InstantLock = ReadData(ConfigData["Aimbot"], { "InstantLock" }, false);
+            AimControl::HeadshotOnly = ReadData(ConfigData["Aimbot"], { "HeadshotOnly" }, false);
+            AimControl::AdaptiveSmoothing = ReadData(ConfigData["Aimbot"], { "AdaptiveSmoothing" }, false);
+            AimControl::MicroAdjustments = ReadData(ConfigData["Aimbot"], { "MicroAdjustments" }, false);
+            AimControl::PrecisionThreshold = ReadData(ConfigData["Aimbot"], { "PrecisionThreshold" }, 0.1f);
+            
             Text::Aimbot::HotKey = KeyMgr::GetKeyName(AimControl::HotKey);
             LegitBotConfig::HitboxUpdated = false;
         }
@@ -457,10 +476,10 @@ namespace MyConfigSaver
             MenuConfig::SpecWinPos.x = ReadData(ConfigData["MenuConfig"], { "SpecWinPos","x" }, 10.0f);
             MenuConfig::SpecWinPos.y = ReadData(ConfigData["MenuConfig"], { "SpecWinPos","y" }, ImGui::GetIO().DisplaySize.y / 2 - 200);
 
-            MenuConfig::MarkWinChengePos = true;
-            MenuConfig::BombWinChengePos = true;
-            MenuConfig::RadarWinChengePos = true;
-            MenuConfig::SpecWinChengePos = true;
+            MenuConfig::MarkWinChangePos = true;
+            MenuConfig::BombWinChangePos = true;
+            MenuConfig::RadarWinChangePos = true;
+            MenuConfig::SpecWinChangePos = true;
         }
     }
 }

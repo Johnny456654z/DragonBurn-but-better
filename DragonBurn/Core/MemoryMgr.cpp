@@ -8,7 +8,11 @@ MemoryMgr::MemoryMgr()
 
 MemoryMgr::~MemoryMgr() 
 {
-	DisconnectDriver();
+	// Ensure proper cleanup
+	if (kernelDriver != nullptr && kernelDriver != INVALID_HANDLE_VALUE)
+	{
+		DisconnectDriver();
+	}
 
 	ProcessID = 0;
 	kernelDriver = nullptr;
@@ -47,8 +51,9 @@ DWORD MemoryMgr::GetProcessID(const wchar_t* processName)
 	if (kernelDriver != nullptr)
 	{
 		PID_PACK PidPack;
-		RtlZeroMemory(PidPack.name, 1024);
-		wcsncpy(PidPack.name, processName, 1024);
+		RtlZeroMemory(PidPack.name, PROCESS_NAME_BUFFER_SIZE * sizeof(WCHAR));
+		wcsncpy(PidPack.name, processName, PROCESS_NAME_BUFFER_SIZE - 1);
+		PidPack.name[PROCESS_NAME_BUFFER_SIZE - 1] = L'\0'; // Ensure null termination
 
 		BOOL result = DeviceIoControl(kernelDriver,
 			IOCTL_GET_PID,
@@ -76,8 +81,9 @@ DWORD64 MemoryMgr::GetModuleBase(const wchar_t* moduleName)
 		DWORD64 address = 0;
 		ModulePack.pid = ProcessID;
 		ModulePack.baseAddress = address;
-		RtlZeroMemory(ModulePack.moduleName, 1024);
-		wcsncpy(ModulePack.moduleName, moduleName, 1024);
+		RtlZeroMemory(ModulePack.moduleName, MODULE_NAME_BUFFER_SIZE * sizeof(WCHAR));
+		wcsncpy(ModulePack.moduleName, moduleName, MODULE_NAME_BUFFER_SIZE - 1);
+		ModulePack.moduleName[MODULE_NAME_BUFFER_SIZE - 1] = L'\0'; // Ensure null termination
 
 		BOOL result = DeviceIoControl(kernelDriver,
 			IOCTL_GET_MODULE_BASE,

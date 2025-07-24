@@ -31,8 +31,21 @@ namespace AimControl
     inline bool HasTarget = false;
     inline bool onlyAuto = false;
 
+    // Enhanced precision aimbot settings
+    inline bool PrecisionMode = false;          // Enable ultra-precise aiming
+    inline bool PredictiveAiming = false;       // Predict enemy movement using real velocity
+    inline bool InstantLock = false;            // Instant snap to target (risky)
+    inline bool HeadshotOnly = false;           // Force headshot targeting
+    inline float PrecisionThreshold = 0.1f;    // Pixel-perfect threshold
+    inline bool AdaptiveSmoothing = false;      // Dynamic smoothing based on distance
+    inline bool MicroAdjustments = false;       // Sub-pixel adjustments
+    inline int MaxAdjustmentSteps = 10;         // Max steps for precision aiming
 
-    void AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& AimPosList);
+    void AimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& AimPosList, std::vector<CEntity>& EntityList);
+    void PrecisionAimBot(const CEntity& Local, Vec3 LocalPos, std::vector<Vec3>& AimPosList, std::vector<CEntity>& EntityList);
     void switchToggle();
     bool CheckAutoMode(const std::string& WeaponName);
+    Vec3 PredictEnemyPosition(const CEntity& Enemy, const Vec3& targetPos, float predictionTime);
+    float CalculateOptimalSmoothing(float distance, float targetSize);
+    bool IsTargetStable(const Vec2& screenPos, float threshold);
 }

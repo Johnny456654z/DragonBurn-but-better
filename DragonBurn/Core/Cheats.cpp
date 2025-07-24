@@ -27,6 +27,11 @@
 #include "../Features/SpectatorList.h"
 #include "../Helpers/Logger.h"
 
+// Constants for non-security related values
+constexpr int MAX_ENTITIES = 64;
+constexpr float MAX_AIM_DISTANCE = 100000.0f;
+constexpr DWORD AIM_TOGGLE_COOLDOWN_MS = 200;
+
 int PreviousTotalHits = 0;
 
 void RenderCrosshair(ImDrawList*, const CEntity&);
@@ -37,7 +42,7 @@ void Menu();
 void Visual(const CEntity&);
 void Radar(Base_Radar, const CEntity&);
 void Trigger(const CEntity&);
-void AIM(const CEntity&, std::vector<Vec3>);
+void AIM(const CEntity&, std::vector<Vec3>, std::vector<CEntity>);
 void MiscFuncs(CEntity&);
 
 void Cheats::Run()
@@ -76,17 +81,19 @@ void Cheats::Run()
 
 	// AimBot data
 	float DistanceToSight = 0;
-	float MaxAimDistance = 100000;
+	float MaxAimDistance = MAX_AIM_DISTANCE;
 	Vec3  HeadPos{ 0,0,0 };
 	Vec2  Angles{ 0,0 };
 	std::vector<Vec3> AimPosList;
+	std::vector<CEntity> EntityList; // Store entities for prediction
+	std::vector<CEntity> AllEntities; // Store all entities for spectator system
 
 	// Radar Data
 	Base_Radar GameRadar;
 	if ((RadarCFG::ShowRadar && LocalEntity.Controller.TeamID != 0) || (RadarCFG::ShowRadar && MenuConfig::ShowMenu))
 		RadarSetting(GameRadar);
 
-	for (int i = 0; i < 64; i++)
+	for (int i = 0; i < MAX_ENTITIES; i++)
 	{
 		CEntity Entity;
 		DWORD64 EntityAddress = 0;
@@ -103,8 +110,8 @@ void Cheats::Run()
 		if (!Entity.UpdatePawn(Entity.Pawn.Address))
 			continue;
 
-		//speclist
-		SpecList::GetSpectatorList(Entity, LocalEntity);
+		// Add all valid entities to the list for spectator analysis
+		AllEntities.push_back(Entity);
 
 		if (MenuConfig::TeamCheck && Entity.Controller.TeamID == LocalEntity.Controller.TeamID)
 			continue;
@@ -122,10 +129,10 @@ void Cheats::Run()
 		//update Bone select
 		if (AimControl::HitboxList.size() != 0)
 		{
-			for (int i = 0; i < AimControl::HitboxList.size(); i++)
+			for (int j = 0; j < AimControl::HitboxList.size(); j++)
 			{
 				Vec3 TempPos;
-				DistanceToSight = Entity.GetBone().BonePosList[AimControl::HitboxList[i]].ScreenPos.DistanceTo({ Gui.Window.Size.x / 2,Gui.Window.Size.y / 2 });
+				DistanceToSight = Entity.GetBone().BonePosList[AimControl::HitboxList[j]].ScreenPos.DistanceTo({ Gui.Window.Size.x / 2,Gui.Window.Size.y / 2 });
 
 				if (DistanceToSight < MaxAimDistance)
 				{
@@ -135,11 +142,12 @@ void Cheats::Run()
 						Entity.Pawn.bSpottedByMask & (DWORD64(1) << (LocalPlayerControllerIndex)) ||
 						LocalEntity.Pawn.bSpottedByMask & (DWORD64(1) << (i)))
 					{
-						TempPos = Entity.GetBone().BonePosList[AimControl::HitboxList[i]].Pos;
-						if (AimControl::HitboxList[i] == BONEINDEX::head)
+						TempPos = Entity.GetBone().BonePosList[AimControl::HitboxList[j]].Pos;
+						if (AimControl::HitboxList[j] == BONEINDEX::head)
 							TempPos.z -= 1.f;
 
 						AimPosList.push_back(TempPos);
+						EntityList.push_back(Entity); // Store entity for prediction
 					}
 				}
 			}
@@ -190,10 +198,13 @@ void Cheats::Run()
 		}
 	}
 
+	// Process spectator data with all collected entities
+	SpecList::ProcessAllSpectators(AllEntities, LocalEntity);
+
 	Visual(LocalEntity);
 	Radar(GameRadar, LocalEntity);
 	Trigger(LocalEntity);
-	AIM(LocalEntity, AimPosList);
+	AIM(LocalEntity, AimPosList, EntityList);
 	MiscFuncs(LocalEntity);
 
 
@@ -261,7 +272,7 @@ void Trigger(const CEntity& LocalEntity)
 		TriggerBot::Run(LocalEntity);
 }
 
-void AIM(const CEntity& LocalEntity, std::vector<Vec3> AimPosList)
+void AIM(const CEntity& LocalEntity, std::vector<Vec3> AimPosList, std::vector<CEntity> EntityList)
 {
 	// Aimbot
 	DWORD lastTick = 0;
@@ -272,11 +283,11 @@ void AIM(const CEntity& LocalEntity, std::vector<Vec3> AimPosList)
 
 		if (LegitBotConfig::AimAlways || GetAsyncKeyState(AimControl::HotKey)) {
 			if (AimPosList.size() != 0) {
-				AimControl::AimBot(LocalEntity, LocalEntity.Pawn.CameraPos, AimPosList);
+				AimControl::AimBot(LocalEntity, LocalEntity.Pawn.CameraPos, AimPosList, EntityList);
 			}
 		}
 
-		if (LegitBotConfig::AimToggleMode && (GetAsyncKeyState(AimControl::HotKey) & 0x8000) && currentTick - lastTick >= 200) {
+		if (LegitBotConfig::AimToggleMode && (GetAsyncKeyState(AimControl::HotKey) & 0x8000) && currentTick - lastTick >= AIM_TOGGLE_COOLDOWN_MS) {
 			AimControl::switchToggle();
 			lastTick = currentTick;
 		}
@@ -305,10 +316,10 @@ void RadarSetting(Base_Radar& Radar)
 	ImGui::SetWindowSize({ RadarCFG::RadarRange * 2,RadarCFG::RadarRange * 2 });
 	ImGui::SetWindowPos(MenuConfig::RadarWinPos, ImGuiCond_Once);
 
-	if (MenuConfig::RadarWinChengePos)
+	if (MenuConfig::RadarWinChangePos)
 	{
 		ImGui::SetWindowPos("Radar", MenuConfig::RadarWinPos);
-		MenuConfig::RadarWinChengePos = false;
+		MenuConfig::RadarWinChangePos = false;
 	}
 
 	if (!RadarCFG::customRadar)

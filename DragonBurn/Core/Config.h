@@ -10,7 +10,7 @@ namespace MenuConfig
 
 	inline std::string path = "";
 	inline std::string docPath = "";
-	inline int RenderFPS = 10000.0f;
+	inline int RenderFPS = 10000;
 	inline int RenderDistance = 1000;
 
 
@@ -40,10 +40,10 @@ namespace MenuConfig
 	inline ImVec2 RadarWinPos;
 	inline ImVec2 SpecWinPos;
 	inline ImVec2 BombWinPos;
-	inline bool MarkWinChengePos = false;
-	inline bool RadarWinChengePos = false;
-	inline bool SpecWinChengePos = false;
-	inline bool BombWinChengePos = false;
+	inline bool MarkWinChangePos = false;
+	inline bool RadarWinChangePos = false;
+	inline bool SpecWinChangePos = false;
+	inline bool BombWinChangePos = false;
 	inline int HotKey = VK_END;
 }
 

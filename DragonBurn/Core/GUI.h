@@ -444,6 +444,24 @@ namespace GUI
 						PutSliderFloat(Text::Aimbot::FovSlider.c_str(), 10.f, &AimControl::AimFov, &AimControl::AimFovMin, &FovMax, "%.1f");
 						PutSliderFloat(Text::Aimbot::FovMinSlider.c_str(), 10.f, &AimControl::AimFovMin, &FovMin, &MinFovMax, "%.2f");
 						PutSliderFloat(Text::Aimbot::SmoothSlider.c_str(), 10.f, &AimControl::Smooth, &SmoothMin, &SmoothMax, "%.1f");
+						
+						// Precision Aimbot Settings
+						ImGui::NewLine();
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.f);
+						ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Precision Mode");
+						PutSwitch("Enable Precision Mode", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::PrecisionMode, false, NULL, NULL, "Ultra-precise aiming for guaranteed hits");
+						if (AimControl::PrecisionMode)
+						{
+							PutSwitch("Headshot Only", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::HeadshotOnly, false, NULL, NULL, "Force targeting head only");
+							PutSwitch("Instant Lock", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::InstantLock, false, NULL, NULL, "Instant snap to target (RISKY)");
+							PutSwitch("Predictive Aiming", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::PredictiveAiming, false, NULL, NULL, "Predict enemy movement");
+							PutSwitch("Adaptive Smoothing", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::AdaptiveSmoothing, false, NULL, NULL, "Dynamic smoothing based on distance");
+							PutSwitch("Micro Adjustments", 10.f, ImGui::GetFrameHeight() * 1.7, &AimControl::MicroAdjustments, false, NULL, NULL, "Sub-pixel precision adjustments");
+							
+							float PrecisionMin = 0.01f, PrecisionMax = 5.0f;
+							PutSliderFloat("Precision Threshold", 10.f, &AimControl::PrecisionThreshold, &PrecisionMin, &PrecisionMax, "%.2f px");
+						}
+						
 						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.f);
 						ImGui::TextDisabled(Text::Aimbot::BoneList.c_str());
 

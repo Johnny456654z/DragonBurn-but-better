@@ -25,7 +25,6 @@ namespace ConfigMenu {
 		static char configNameBuffer[128] = "";
 		static std::string selectedConfigName = "";
 		static int selectedConfigIndex = -1;
-		static bool showSaveConfirm = false;
 
 		const std::string configDir = MenuConfig::path;
 		static std::vector<std::string> configFiles;
@@ -67,45 +66,6 @@ namespace ConfigMenu {
 			{
 				selectedConfigName = "";
 			}
-		}
-
-		// Save confirmation popup - at the top level
-		if (showSaveConfirm)
-		{
-			ImGui::OpenPopup("Save Config Confirmation");
-			showSaveConfirm = false;
-		}
-
-		if (ImGui::BeginPopupModal("Save Config Confirmation", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Save current settings to '%s'?", selectedConfigName.c_str());
-			ImGui::Text("This will overwrite the existing configuration.");
-			ImGui::Separator();
-			
-			// Green Yes button
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.6f, 0.1f, 1.0f));
-			if (ImGui::Button("Yes", ImVec2(80, 0)))
-			{
-				MyConfigSaver::SaveConfig(selectedConfigName + ".cfg");
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::PopStyleColor(3);
-			
-			ImGui::SameLine();
-			
-			// Red No button
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
-			if (ImGui::Button("No", ImVec2(80, 0)))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::PopStyleColor(3);
-			
-			ImGui::EndPopup();
 		}
 
 		// Two-column layout
@@ -163,7 +123,7 @@ namespace ConfigMenu {
 		ImGui::TableNextColumn();
 		if (RenderConditionalButton("Save", ImVec2(-1, 0), hasSelection))
 		{
-			showSaveConfirm = true;
+			ImGui::OpenPopup("Save Config");
 		}
 		
 		ImGui::TableNextColumn();
