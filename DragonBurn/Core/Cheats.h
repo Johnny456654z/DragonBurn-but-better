@@ -1,10 +1,10 @@
 #pragma once
-#include "..\Game/Game.h"
-#include "..\Game/Entity.h"
+#include "..\Game\Game.h"
+#include "..\Game\Entity.h"
 #include "..\Features\Aimbot.h"
-#include "..\Features/Radar.h"
-#include "..\Features/TriggerBot.h"
-#include "..\Features/Misc.h"
+#include "..\Features\Radar.h"
+#include "..\Features\TriggerBot.h"
+#include "..\Features\Misc.h"
 
 namespace Cheats
 {

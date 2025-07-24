@@ -1,5 +1,5 @@
 #pragma once
-#include "..\Game/Game.h"
+#include "..\Game\Game.h"
 #include "Globals.h"
 
 class globalvars

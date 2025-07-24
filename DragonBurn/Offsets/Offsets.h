@@ -1,8 +1,8 @@
 #pragma once
 #include <Windows.h>
-#include "..\Core/MemoryMgr.h"
+#include "..\Core\MemoryMgr.h"
 #include <json.hpp>
-#include "..\Helpers/WebApi.h"
+#include "..\Helpers\WebApi.h"
 
 using json = nlohmann::json;
 

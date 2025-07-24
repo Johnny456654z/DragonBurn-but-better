@@ -1,5 +1,5 @@
 #pragma once
-#include "..\OS-ImGui/OS-ImGui.h"
+#include "..\OS-ImGui\OS-ImGui.h"
 
 class CView
 {

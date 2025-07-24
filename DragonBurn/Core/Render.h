@@ -5,12 +5,12 @@
 #include <map>
 #include <Windows.h>
 #include <unordered_map>
-#include "..\Game/Entity.h"
-#include "..\Helpers/Format.h"
-#include "..\OS-ImGui/imgui/imgui.h"
+#include "..\Game\Entity.h"
+#include "..\Helpers\Format.h"
+#include "..\OS-ImGui\imgui\imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "..\OS-ImGui/imgui/imgui_internal.h"
-#include "..\Features/TriggerBot.h"
+#include "..\OS-ImGui\imgui\imgui_internal.h"
+#include "..\Features\TriggerBot.h"
 
 namespace Render
 {

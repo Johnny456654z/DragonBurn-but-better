@@ -9,12 +9,12 @@
 //                 |___/                                    
 //https://github.com/ByteCorum/DragonBurn
 
-#include "Core/Cheats.h"
-#include "Offsets/Offsets.h"
-#include "Resources/Language.hpp"
-#include "Core/Init.h"
-#include "Config/ConfigSaver.h"
-#include "Helpers/Logger.h"
+#include "Core\Cheats.h"
+#include "Offsets\Offsets.h"
+#include "Resources\Language.hpp"
+#include "Core\Init.h"
+#include "Config\ConfigSaver.h"
+#include "Helpers\Logger.h"
 #include <filesystem>
 #include <KnownFolders.h>
 #include <ShlObj.h>

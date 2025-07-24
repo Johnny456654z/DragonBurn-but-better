@@ -1,13 +1,13 @@
 #include "ConfigMenu.h"
-#include "..\Core/Config.h"
+#include "..\Core\Config.h"
 #include "ConfigSaver.h"
-#include "..\Features/TriggerBot.h"
-#include "..\Features/Aimbot.h"
+#include "..\Features\TriggerBot.h"
+#include "..\Features\Aimbot.h"
 #include <filesystem>
 #include <string>
-#include "..\Resources/Language.hpp"
-#include "..\Features/RCS.h"
-#include "..\Helpers/KeyManager.h"
+#include "..\Resources\Language.hpp"
+#include "..\Features\RCS.h"
+#include "..\Helpers\KeyManager.h"
 
 namespace ConfigMenu {
 	

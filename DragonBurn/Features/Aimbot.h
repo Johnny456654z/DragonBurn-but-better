@@ -9,7 +9,7 @@
 #include "..\Core\Config.h"
 #include <iostream>
 #include "..\Game\View.h"
-#include "..\Features/RCS.h"
+#include "..\Features\RCS.h"
 #include "TriggerBot.h"
 
 extern "C" {

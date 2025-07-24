@@ -16,16 +16,16 @@
 
 #include "Cheats.h"
 #include "Render.h"
-#include "..\Core/Config.h"
+#include "..\Core\Config.h"
 
-#include "..\Core/Init.h"
+#include "..\Core\Init.h"
 
-#include "..\Features/ESP.h"
-#include "..\Core/GUI.h"
-#include "..\Features/RCS.H"
-#include "..\Features/BombTimer.h"
-#include "..\Features/SpectatorList.h"
-#include "..\Helpers/Logger.h"
+#include "..\Features\ESP.h"
+#include "..\Core\GUI.h"
+#include "..\Features\RCS.h"
+#include "..\Features\BombTimer.h"
+#include "..\Features\SpectatorList.h"
+#include "..\Helpers\Logger.h"
 
 // Constants for non-security related values
 constexpr int MAX_ENTITIES = 64;
