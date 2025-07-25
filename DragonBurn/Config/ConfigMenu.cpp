@@ -26,14 +26,14 @@ namespace ConfigMenu {
 		static std::string selectedConfigName = "";
 		static int selectedConfigIndex = -1;
 		static bool showSaveConfirm = false;
+static bool showDeleteConfirm = false;
 
-		const std::string configDir = MenuConfig::path;
 		static std::vector<std::string> configFiles;
 		std::vector<const char*> configFilesCStr;
 
-		// Rebuild config file list
+		// Rebuild config file list - use MenuConfig::path directly
 		configFiles.clear();
-		for (const auto& entry : std::filesystem::directory_iterator(configDir))
+		for (const auto& entry : std::filesystem::directory_iterator(MenuConfig::path))
 		{
 			if (entry.is_regular_file() && entry.path().extension() == ".cfg")
 			{
@@ -106,7 +106,48 @@ namespace ConfigMenu {
 			ImGui::PopStyleColor(3);
 			
 			ImGui::EndPopup();
-		}
+			}
+			
+			if (showDeleteConfirm)
+			{
+			ImGui::OpenPopup("Delete Config");
+			showDeleteConfirm = false;
+			}
+			
+			if (ImGui::BeginPopupModal("Delete Config", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+			ImGui::Text("Delete configuration '%s'?", selectedConfigName.c_str());
+			ImGui::Text("This cannot be undone.");
+			ImGui::Separator();
+			
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.6f, 0.1f, 1.0f));
+			if (ImGui::Button("Yes", ImVec2(80, 0)))
+			{
+			std::string fullPath = MenuConfig::path + '\\' + selectedConfigName + ".cfg";
+			if (std::filesystem::remove(fullPath))
+			{
+			selectedConfigName = "";
+			selectedConfigIndex = -1;
+			}
+			ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor(3);
+			
+			ImGui::SameLine();
+			
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
+			if (ImGui::Button("No", ImVec2(80, 0)))
+			{
+			ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor(3);
+			
+			ImGui::EndPopup();
+			}
 
 		// Two-column layout
 		ImGui::BeginTable("ConfigTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV);
@@ -169,33 +210,10 @@ namespace ConfigMenu {
 		ImGui::TableNextColumn();
 		if (RenderConditionalButton("Delete", ImVec2(-1, 0), hasSelection))
 		{
-			ImGui::OpenPopup("Delete Config");
+		showDeleteConfirm = true;
 		}
 		
 		ImGui::EndTable();
-		
-		// Delete confirmation popup
-		if (ImGui::BeginPopupModal("Delete Config", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Delete configuration '%s'?", selectedConfigName.c_str());
-			ImGui::Text("This cannot be undone.");
-			ImGui::Separator();
-			
-			if (ImGui::Button("Yes", ImVec2(80, 0)))
-			{
-				std::string fullPath = configDir + "\\" + selectedConfigName + ".cfg";
-				std::remove(fullPath.c_str());
-				selectedConfigName = "";
-				selectedConfigIndex = -1;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("No", ImVec2(80, 0)))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
 		
 		// ================== RIGHT COLUMN ==================
 		ImGui::TableNextColumn();
@@ -227,7 +245,7 @@ namespace ConfigMenu {
 		
 		if (ImGui::Button("Open Config Folder", ImVec2(-1, 0)))
 		{
-			Gui.OpenWebpage(configDir.c_str());
+			Gui.OpenWebpage(MenuConfig::path.c_str());
 		}
 		
 		// Reset confirmation popup
@@ -261,7 +279,7 @@ namespace ConfigMenu {
 		
 		ImGui::Text("Folder:");
 		// Make the path clickable to change folder
-		if (ImGui::Button(configDir.c_str(), ImVec2(-1, 0)))
+		if (ImGui::Button(MenuConfig::path.c_str(), ImVec2(-1, 0)))
 		{
 			ImGui::OpenPopup("Change Folder");
 		}
@@ -278,7 +296,7 @@ namespace ConfigMenu {
 			
 			if (!initialized)
 			{
-				strcpy_s(folderPath, sizeof(folderPath), configDir.c_str());
+				strcpy_s(folderPath, sizeof(folderPath), MenuConfig::path.c_str());
 				initialized = true;
 			}
 			
