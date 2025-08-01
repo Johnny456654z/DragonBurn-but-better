@@ -130,12 +130,21 @@ void Cheats::Run()
 		//update Bone select
 		if (AimControl::HitboxList.size() != 0)
 		{
+			// Calculate FOV radius (same as circle calculation - fixed reference)
+			constexpr float DEG_TO_RAD = M_PI / 180.f;
+			constexpr float BASE_FOV = 90.0f; // Use standard unscoped FOV as reference
+			float halfWindowSize = Gui.Window.Size.x / 2.f;
+			float baseFovTan = tan(BASE_FOV * DEG_TO_RAD / 2.f);
+			float aimFovTan = tan(AimControl::AimFov * DEG_TO_RAD / 2.f);
+			float aimFovRadius = (aimFovTan / baseFovTan) * halfWindowSize;
+
 			for (int j = 0; j < AimControl::HitboxList.size(); j++)
 			{
 				Vec3 TempPos;
 				DistanceToSight = Entity.GetBone().BonePosList[AimControl::HitboxList[j]].ScreenPos.DistanceTo({ Gui.Window.Size.x / 2,Gui.Window.Size.y / 2 });
 
-				if (DistanceToSight < MaxAimDistance)
+				// Check if target is within FOV circle radius
+				if (DistanceToSight <= aimFovRadius && DistanceToSight < MaxAimDistance)
 				{
 					MaxAimDistance = DistanceToSight;
 
@@ -251,6 +260,10 @@ void Visual(const CEntity& LocalEntity)
 
 	Misc::AirCheck(LocalEntity);
 
+	// FOV Circle (same pattern as crosshair)
+	if (LegitBotConfig::AimBot)
+		Render::DrawFovCircle(ImGui::GetBackgroundDrawList(), LocalEntity);
+
 	RenderCrosshair(ImGui::GetBackgroundDrawList(), LocalEntity);
 }
 
@@ -280,8 +293,6 @@ void AIM(const CEntity& LocalEntity, std::vector<Vec3> AimPosList, std::vector<C
 	DWORD currentTick = GetTickCount64();
 	if (LegitBotConfig::AimBot) 
 	{
-		Render::DrawFovCircle(LocalEntity);
-
 		if (LegitBotConfig::AimAlways || GetAsyncKeyState(AimControl::HotKey)) {
 			if (AimPosList.size() != 0) {
 				AimControl::AimBot(LocalEntity, LocalEntity.Pawn.CameraPos, AimPosList, EntityList);

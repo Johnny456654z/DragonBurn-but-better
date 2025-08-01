@@ -54,27 +54,26 @@ namespace Render
 
 	}
 
-	inline void DrawFovCircle(const CEntity& LocalEntity)
+	inline void DrawFovCircle(ImDrawList* drawList, const CEntity& LocalEntity) noexcept
 	{
 		if (!ESPConfig::DrawFov)
 			return;
 
 		constexpr float DEG_TO_RAD = M_PI / 180.f;
-		Vec2 CenterPoint = Gui.Window.Size / 2;
-		float HalfWindowSize = Gui.Window.Size.x / 2.f;
+		constexpr float BASE_FOV = 90.0f; // Use standard unscoped FOV as reference
+		
+		// Use same coordinate system as aimbot (Gui.Window.Size)
+		ImVec2 center = ImVec2(Gui.Window.Size.x / 2.0f, Gui.Window.Size.y / 2.0f);
+		float halfWindowSize = Gui.Window.Size.x / 2.0f;
 
-		float LocalFovTan = tan(LocalEntity.Pawn.Fov * DEG_TO_RAD / 2.f);
-		float AimFovTan = tan(AimControl::AimFov * DEG_TO_RAD / 2.f);
-		float AimFovMinTan = tan(AimControl::AimFovMin * DEG_TO_RAD / 2.f);
+		// Calculate radius based on standard FOV (90°) so circle size stays consistent
+		float baseFovTan = tan(BASE_FOV * DEG_TO_RAD / 2.0f);
+		float aimFovTan = tan(AimControl::AimFov * DEG_TO_RAD / 2.0f);
 
-		float Radius = (AimFovTan / LocalFovTan) * HalfWindowSize;
-		Gui.Circle(CenterPoint, Radius, LegitBotConfig::FovCircleColor, 1);
-
-		if (AimControl::AimFovMin > 0)
-		{
-			float MinRadius = (AimFovMinTan / LocalFovTan) * HalfWindowSize;
-			Gui.Circle(CenterPoint, MinRadius, LegitBotConfig::FovCircleColor, 1);
-		}
+		float radius = (aimFovTan / baseFovTan) * halfWindowSize;
+		
+		// Draw circle directly to background draw list (same as crosshair)
+		drawList->AddCircle(center, radius, LegitBotConfig::FovCircleColor, 0, 1.5f);
 	}
 
 	inline void DrawCrossHair(ImDrawList* drawList, const ImVec2& pos, ImColor color) noexcept
