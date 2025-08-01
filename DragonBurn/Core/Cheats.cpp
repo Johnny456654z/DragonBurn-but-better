@@ -107,11 +107,12 @@ void Cheats::Run()
 		if (!Entity.UpdateController(EntityAddress))
 			continue;
 
+		// Add entities with valid controllers to AllEntities for spectator analysis
+		// This includes dead/spectating players who might not have valid pawns
+		AllEntities.push_back(Entity);
+
 		if (!Entity.UpdatePawn(Entity.Pawn.Address))
 			continue;
-
-		// Add all valid entities to the list for spectator analysis
-		AllEntities.push_back(Entity);
 
 		if (MenuConfig::TeamCheck && Entity.Controller.TeamID == LocalEntity.Controller.TeamID)
 			continue;

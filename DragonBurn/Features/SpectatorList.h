@@ -126,13 +126,29 @@ namespace SpecList
             if (entity.Controller.Address == 0 || entity.Controller.PlayerName.empty())
                 continue;
 
-            // Get entity's pawn handle
-            uint32_t entityPawnHandle = 0;
-            if (!memoryManager.ReadMemory<uint32_t>(entity.Controller.Address + Offset.PlayerController.m_hPawn, entityPawnHandle) || entityPawnHandle == 0)
+            // Skip if this is the local player
+            if (entity.Controller.Address == LocalEntity.Controller.Address)
                 continue;
 
-            // Resolve entity's pawn address
-            uintptr_t entityPawnAddr = ResolveEntityHandle(entityList, entityPawnHandle);
+            // Get entity's pawn handle - try multiple methods for robustness
+            uint32_t entityPawnHandle = 0;
+            if (!memoryManager.ReadMemory<uint32_t>(entity.Controller.Address + Offset.PlayerController.m_hPawn, entityPawnHandle))
+                continue;
+
+            // Handle case where pawn handle is 0 (might be dead/spectating)
+            uintptr_t entityPawnAddr = 0;
+            if (entityPawnHandle != 0)
+            {
+                entityPawnAddr = ResolveEntityHandle(entityList, entityPawnHandle);
+            }
+            
+            // If we couldn't resolve through handle, try using the entity's pawn address directly
+            if (entityPawnAddr == 0 && entity.Pawn.Address != 0)
+            {
+                entityPawnAddr = entity.Pawn.Address;
+            }
+
+            // Skip if we still don't have a valid pawn address
             if (entityPawnAddr == 0)
                 continue;
 
@@ -151,7 +167,6 @@ namespace SpecList
             {
                 AddSpectatorIfNotExists(spectatorData.targetSpectators, entity.Controller.PlayerName);
             }
-            
         }
 
         // Store data in LocalEntity for compatibility
