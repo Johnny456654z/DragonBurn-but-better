@@ -72,24 +72,7 @@ namespace Init
         //    SetConsoleTitle(title);
         //}
 
-        static int CheckCheatVersion()
-        {
-            const std::string curVersionUrl = "https://raw.githubusercontent.com/ByteCorum/DragonBurn/data/version";
-            std::string curVersions;
-
-            if (!Web::CheckConnection())
-                return 0;
-            if (!Web::Get(curVersionUrl, curVersions))
-                return 1;
-
-            std::vector<std::string> supportedVersions = SplitString(curVersions, ';');
-
-            if (std::find(supportedVersions.begin(), supportedVersions.end(), MenuConfig::version) != supportedVersions.end())
-                return 3;
-
-            return 2;
-        }
-	};
+        	};
 
     class Client
     {

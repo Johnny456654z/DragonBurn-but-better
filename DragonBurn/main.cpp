@@ -29,28 +29,6 @@ constexpr int CS2_CONNECTION_WAIT_MS = 20000;
 constexpr int CONSOLE_HIDE_DELAY_MS = 3000;
 
 // Helper functions for error handling
-void HandleVersionCheckResult(int result)
-{
-	Log::PreviousLine();
-	switch (result)
-	{
-	case 0:
-		Log::Error("Bad internet connection");
-		break;
-	case 1:
-		Log::Error("Failed to get currently supported versions");
-		break;
-	case 2:
-		Log::Error("Your cheat version is out of support");
-		break;
-	case 3:
-		Log::Fine("Your cheat version is up to date and supported");
-		break;
-	default:
-		Log::Error("Unknown connection error");
-		break;
-	}
-}
 
 void HandleOffsetUpdateResult(int result)
 {
@@ -125,10 +103,6 @@ https://github.com/ByteCorum/DragonBurn
 		Log::Warning("Your os is unsupported, bugs may occurred", true);
 	}
 
-#ifndef DBDEBUG
-	Log::Info("Checking cheat version");
-	HandleVersionCheckResult(Init::Verify::CheckCheatVersion());
-#endif
 
 	Log::Info("Updating offsets");
 	HandleOffsetUpdateResult(Offset.UpdateOffsets());

@@ -219,7 +219,7 @@ void Cheats::Run()
 
 
 	int currentFPS = static_cast<int>(ImGui::GetIO().Framerate);
-	Log::Debug("currentFPS: " + std::to_string(currentFPS));
+	//Log::Debug("currentFPS: " + std::to_string(currentFPS));
 	if (currentFPS > MenuConfig::RenderFPS)
 	{
 		int FrameWait = round(1000000.0f / MenuConfig::RenderFPS);

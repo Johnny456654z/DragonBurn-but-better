@@ -24,7 +24,6 @@ namespace MyConfigSaver
         json ConfigData;
 
         ConfigData["0"]["Name"] = MenuConfig::name;
-        ConfigData["0"]["Version"] = MenuConfig::version;
         ConfigData["0"]["Author"] = author;
 
 
