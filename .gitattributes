@@ -1,0 +1,77 @@
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+# The above will handle all files NOT found below
+
+
+
+# These files are text and should be normalized (Convert crlf => lf)
+.gitattributes text
+.gitignore      text
+*.md            text diff=Markdown
+*.cs            text diff=CSharp eol=lf
+*.cpp           text diff=C++ eol=lf
+*.hpp           text diff=C++ eol=lf
+*.h             text diff=C eol=lf
+*.c             text diff=C eol=lf
+*.rc            text diff=Assembly eol=lf
+CMakeLists.txt  text diff=CMake eol=lf
+
+
+
+# Exclude files from exporting
+
+.gitattributes  export-ignore
+.gitignore      export-ignore
+
+
+
+# Enable syntax highlighting for files with extensions.
+
+*.md linguist-language=Markdown
+*.md linguist-detectable=true
+*.md linguist-documentation=false
+
+*.cs linguist-language=CSharp
+*.cs linguist-detectable=true
+*.cs linguist-documentation=false
+
+*.cpp linguist-language=C++
+*.cpp linguist-detectable=true
+*.cpp linguist-documentation=false
+
+*.hpp linguist-language=C++
+*.hpp linguist-detectable=true
+*.hpp linguist-documentation=false
+
+*.h linguist-language=C
+*.h linguist-detectable=true
+*.h linguist-documentation=false
+
+*.c linguist-language=C
+*.c linguist-detectable=true
+*.c linguist-documentation=false
+
+*.rc linguist-language=Assembly
+*.rc linguist-detectable=true
+*.rc linguist-documentation=false
+
+CMakeLists.txt linguist-language=CMake
+CMakeLists.txt linguist-detectable=true
+CMakeLists.txt linguist-documentation=false
+
+
+#Ignore dirs/files
+
+DragonBurn/OS-ImGui/*       linguist-vendored
+DragonBurn/OS-ImGui/imgui/* linguist-vendored
+DragonBurn/OS-ImGui/stb/*   linguist-vendored
+DragonBurn/Libs/*           linguist-vendored
+DragonBurn/Libs/json/*      linguist-vendored
+DragonBurn/Libs/curl/include/curl/*           linguist-vendored
+DragonBurn/Libs/zlib/include/*                linguist-vendored
+DragonBurn/Resources/Sounds.hpp       linguist-vendored
+DragonBurn/Resources/Images.hpp       linguist-vendored
+DragonBurn/Resources/WeaponIcon.hpp   linguist-vendored
+DragonBurn/Resources/Font.hpp         linguist-vendored
+DragonBurn/Core/GUI.h                 linguist-vendored
