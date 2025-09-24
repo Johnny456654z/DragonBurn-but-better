@@ -59,15 +59,7 @@ namespace Init
         //    SetConsoleTitle(title);
         //}
 
-        static bool CheckCheatVersion()
-        {
-            std::string supportedVersions;
-            Web::Get("https://raw.githubusercontent.com/ByteCorum/DragonBurn/data/version", supportedVersions);
 
-            if (supportedVersions.find(MenuConfig::version) != std::string::npos)
-                return true;
-            return false;
-        }
 
         static int ExecuteMapper()
         {

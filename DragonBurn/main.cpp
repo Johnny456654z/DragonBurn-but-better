@@ -68,23 +68,7 @@ https://github.com/ByteCorum/DragonBurn
 	if (!Init::Verify::CheckWindowVersion())
 		Log::Warning("Your os is unsupported, bugs may occurred", true);
 
-#ifndef DBDEBUG
-	Log::Info("Checking cheat version");
-	try 
-	{
-		bool result = Init::Verify::CheckCheatVersion();
-		Log::PreviousLine();
-		if (result)
-			Log::Fine("Your cheat version is up to date and supported");
-		else
-			Log::Error("Your cheat version is out of support");
-	}
-	catch (const std::exception& error)
-	{
-		Log::PreviousLine();
-		Log::Error(error.what());
-	}
-#endif
+
 
 	Log::Info("Updating offsets");
 	try 
