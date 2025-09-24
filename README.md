@@ -9,10 +9,21 @@
 
 ---
 
-## ⚡ DragonBurn (but stealthier)
+## ⚡ DragonBurn (but safer)
 
-This is a **fork** of [ByteCorum/DragonBurn](https://github.com/ByteCorum/DragonBurn), just… enhanced.  
-Everything here was tweaked, optimized, or outright improved by someone who got tired of basic memory access. I reserve the right to update or break whatever I feel like, whenever I feel like. No deadlines. No apologies.
+This is a **fork** of [ByteCorum/DragonBurn](https://github.com/ByteCorum/DragonBurn), just… UserMode.  
+
+*
+*
+*
+***
+since the original project is not really public cause you have to use a private driver and it makes you install it in any way you open up the program i have decided it was enough and made DragonBurn USERMODE and actually PUBLIC, i can assure you that you have the same chance of being cought by vac with this method but ITS YOUR OWN RISK AS ALLWAYS
+***
+
+*
+*
+*
+Everything here was generated, tweaked, or outright ruined by an AI. I reserve the right to update or break whatever I feel like, whenever I feel like. No deadlines. No apologies.
 
 If you spot bugs or have ideas for improvements—great, open an issue. I might care. I might forget. Such is life.
 
@@ -21,14 +32,16 @@ If you spot bugs or have ideas for improvements—great, open an issue. I might 
 ### 🔧 What's actually different (and why you'll care)
 
 - **No kernel driver dependency**  
-  - **Old way**: Requires kernel mode driver + mapper setup  
+  - **Old way**: Requires sussy kernel mode driver + mapper setup  
   - **New way**: Pure user-mode with handle hijacking  
-  No more dealing with `DragonBurn-kmd` or kernel mappers. Less setup, less hassle.
+  No more dealing with `unknown drivers` or kernel mappers. Less setup, less hassle.
 
 - **Handle hijacking memory access**  
-  - **Old way**: DeviceIoControl calls through kernel driver  
-  - **New way**: NT API handle hijacking techniques  
-  Different approach, same results.
+  - **Old way**: DeviceIoControl calls through a sussy kernel driver  
+  - **New way**: NT API handle hijacking techniques, 
+   Different approach, same results.
+      - **that method worked on a "esp cheat" for a couple of years with 0 ban reports** 
+   
 
 - **All the same features**  
   - ✨ **Aimbot**: Still works if you want it to  
@@ -37,8 +50,8 @@ If you spot bugs or have ideas for improvements—great, open an issue. I might 
   - 🔫 **RCS**: Still trash  
   - ⚡ **TriggerBot**: Still shoots for your dead brain
 
-- **Cleaner startup**  
-  No more "Looking for PRIVATE kernel Drivers" messages. Just works without the extra steps.
+- **Safer startup**  
+  No more "Looking for PRIVATE kernel Drivers" Safer for your pc and works with not hassle.
 
 ---
 
