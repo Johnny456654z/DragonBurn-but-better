@@ -59,8 +59,6 @@ namespace Init
         //    SetConsoleTitle(title);
         //}
 
-
-
         static int ExecuteMapper()
         {
             STARTUPINFOW si = { sizeof(STARTUPINFOW) };

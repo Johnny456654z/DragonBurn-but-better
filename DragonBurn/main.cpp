@@ -68,8 +68,6 @@ https://github.com/ByteCorum/DragonBurn
 	if (!Init::Verify::CheckWindowVersion())
 		Log::Warning("Your os is unsupported, bugs may occurred", true);
 
-
-
 	Log::Info("Updating offsets");
 	try 
 	{
