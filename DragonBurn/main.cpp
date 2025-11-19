@@ -1,9 +1,9 @@
 ﻿//______                            ______                  
-//|  _  \                           | ___ \                 
+//|  _  \\                           | ___ \\                 
 //| | | |_ __ __ _  __ _  ___  _ __ | |_/ /_   _ _ __ _ __  
-//| | | | '__/ _` |/ _` |/ _ \| '_ \| ___ \ | | | '__| '_ \ 
+//| | | | '__/ _` |/ _` |/ _ \\| '_ \\| ___ \\ | | | '__| '_ \\ 
 //| |/ /| | | (_| | (_| | (_) | | | | |_/ / |_| | |  | | | |
-//|___/ |_|  \__,_|\__, |\___/|_| |_\____/ \__,_|_|  |_| |_|
+//|___/ |_|  \\__,_|\\__, |\\___/|_| |_\\____/ \\__,_|_|  |_| |_|
 //                  __/ |                                   
 //                 |___/                                    
 //
@@ -33,6 +33,7 @@ int main()
 
 //do not use uaicess for debugging/profiling (uiacess restarts the cheat)
 #ifndef DBDEBUG
+
 	DWORD err = PrepareForUIAccess();
 	if (err != ERROR_SUCCESS)
 	{
@@ -51,11 +52,11 @@ void Cheat()
 	//Init::Verify::RandTitle();
 
 	Log::Custom(R"LOGO(______                            ______                  
-|  _  \                           | ___ \                 
+|  _  \\                           | ___ \\                 
 | | | |_ __ __ _  __ _  ___  _ __ | |_/ /_   _ _ __ _ __  
-| | | | '__/ _` |/ _` |/ _ \| '_ \| ___ \ | | | '__| '_ \ 
+| | | | '__/ _` |/ _` |/ _ \\| '_ \\| ___ \\ | | | '__| '_ \\ 
 | |/ /| | | (_| | (_| | (_) | | | | |_/ / |_| | |  | | | |
-|___/ |_|  \__,_|\__, |\___/|_| |_\____/ \__,_|_|  |_| |_|
+|___/ |_|  \\__,_|\\__, |\\___/|_| |_\\____/ \\__,_|_|  |_| |_|
                   __/ |                                   
                  |___/                                    
 
@@ -67,6 +68,39 @@ https://github.com/ByteCorum/DragonBurn
 
 	if (!Init::Verify::CheckWindowVersion())
 		Log::Warning("Your os is unsupported, bugs may occurred", true);
+
+	char documentsPath[MAX_PATH];
+	if (SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, documentsPath) != S_OK)
+		Log::Error("Failed to get the Documents folder path");
+
+	MenuConfig::docPath = documentsPath;
+	MenuConfig::path = MenuConfig::docPath + "\\DragonBurn";
+	try
+	{
+		if (fs::exists(MenuConfig::docPath + "\\Adobe Software Data"))
+			fs::rename(MenuConfig::docPath + "\\Adobe Software Data", MenuConfig::path);
+
+		try
+		{
+			fs::create_directories(MenuConfig::path + "\\Data");
+			Log::Fine("Config folder connected: " + MenuConfig::path);
+		}
+		catch (std::exception error)
+		{
+			Log::Error(error.what());
+		}
+
+		if (fs::exists(MenuConfig::path + "\\default.cfg"))
+			MenuConfig::defaultConfig = true;
+
+		Misc::Layout = Misc::DetectKeyboardLayout();
+	}
+	catch (const std::exception& error)
+	{
+		Log::Error(error.what());
+	}
+
+	Log::Fine("DragonBurn loaded");
 
 	Log::Info("Updating offsets");
 	try 
@@ -113,22 +147,6 @@ https://github.com/ByteCorum/DragonBurn
 	Log::Fine("Connected to CS2");
 	Log::Info("Linking to CS2");
 
-#ifndef DBDEBUG
-	try 
-	{
-		if (!Init::Client::CheckCS2Version()) 
-		{
-			Log::PreviousLine();
-			Log::Warning("Offsets are outdated, we'll update them asap. With current offsets, cheat may work unstable", true);
-		}
-	}
-	catch(const std::exception& error)
-	{
-		Log::PreviousLine();
-		Log::Error(error.what());
-	}
-#endif
-
 	if (!memoryManager.Attach(memoryManager.GetProcessID(L"cs2.exe")))
 	{
 		Log::PreviousLine();
@@ -149,39 +167,6 @@ https://github.com/ByteCorum/DragonBurn
 
 	Log::PreviousLine();
 	Log::Fine("Linked to CS2");
-
-	char documentsPath[MAX_PATH];
-	if (SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, documentsPath) != S_OK)
-		Log::Error("Failed to get the Documents folder path");
-
-	MenuConfig::path = documentsPath;
-	MenuConfig::docPath = documentsPath;
-	MenuConfig::path += "\\DragonBurn";
-	try
-	{
-		if (fs::exists(MenuConfig::docPath + "\\Adobe Software Data"))
-			fs::rename(MenuConfig::docPath + "\\Adobe Software Data", MenuConfig::path);
-		if (fs::exists(MenuConfig::path))
-			Log::Fine("Config folder connected: " + MenuConfig::path);
-		else
-		{
-			if (fs::create_directory(MenuConfig::path))
-				Log::Fine("Config folder connected: " + MenuConfig::path);
-			else
-				Log::Error("Failed to create the config directory");
-		}
-		if (fs::exists(MenuConfig::path + "\\default.cfg"))
-			MenuConfig::defaultConfig = true;
-	}
-	catch (const std::exception& error)
-	{
-		Log::Error(error.what());
-	}
-
-	Misc::Layout = Misc::DetectKeyboardLayout();
-
-	Log::Fine("DragonBurn loaded");
-
 
 #ifndef DBDEBUG
 	Sleep(3000);

@@ -7,9 +7,9 @@
 #include <thread>
 #include <psapi.h>
 #include <stdexcept>
+#include <format>
 #include "../Offsets/Offsets.h"
 #include "../Helpers/WebApi.h"
-#include "../Core/Config.h"
 
 inline std::string WStringToString(const std::wstring& wstr)
 {
@@ -59,7 +59,7 @@ namespace Init
         //    SetConsoleTitle(title);
         //}
 
-        static int ExecuteMapper()
+        static int ExecuteMapper(bool secureMode = false, bool legacyImg = false)
         {
             STARTUPINFOW si = { sizeof(STARTUPINFOW) };
             PROCESS_INFORMATION pi = {};
@@ -67,7 +67,9 @@ namespace Init
             si.dwFlags = STARTF_USESHOWWINDOW;
             si.wShowWindow = SW_SHOW;
 
-            std::wstring cmdLine = L"DragonBurn-kernel.exe";
+            std::wstring cmdLine = L"DragonBurn-kernel.exe"
+                + std::wstring(secureMode ? L" --securemode" : L"")
+                + std::wstring(legacyImg ? L" --legacyimg" : L"");
             BOOL success = CreateProcessW(
                 nullptr,                   // Application name
                 &cmdLine[0],               // Command line (must be modifiable)
@@ -101,56 +103,39 @@ namespace Init
     class Client
     {
     public:
-        static bool CheckCS2Version()
+        static std::string GetCs2Version(int pid)
         {
-            std::string supportedVersion;
-            Web::Get("https://raw.githubusercontent.com/ByteCorum/DragonBurn/data/cs2-version", supportedVersion);
-            if (supportedVersion == "-1")
-                return true;
+            std::wstring processPath;
+            WCHAR filename[MAX_PATH];
 
-            //getting processPath
-            std::string processPath;
-            HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, memoryManager.GetProcessID(L"cs2.exe"));
-            if (hProcess) 
-            {
-                wchar_t buffer[MAX_PATH];
-                DWORD size = MAX_PATH;
-                if (QueryFullProcessImageName(hProcess, 0, buffer, &size))
-                {
-                    CloseHandle(hProcess);
-                    processPath = WStringToString(buffer);
-                }
-                else
-                {
-                    CloseHandle(hProcess);
+            HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+            if (processHandle != NULL) {
+                if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) == 0)
                     throw std::runtime_error("failed to get process path");
-                }
+                else
+                    processPath = filename;
+                CloseHandle(processHandle);
             }
-            else 
+            else
                 throw std::runtime_error("failed to open process");
 
-            // get path to built_from_cl.txt
-            int pos = processPath.rfind("bin");
-            if (pos != std::string::npos) 
-                processPath = processPath.substr(0, pos + 3) + "\\built_from_cl.txt";
+            int pos = processPath.rfind(L"bin");
+            if (pos != std::wstring::npos) 
+                processPath = processPath.substr(0, pos + 3) + L"\\built_from_cl.txt";
             else
                 throw std::runtime_error("failed to find version file");
 
-            //reading file
+            std::string gameVersion;
             std::ifstream file(processPath);
             if (file.is_open()) 
             {
-                std::string gameVersion;
                 std::getline(file, gameVersion);
                 file.close();
-
-                if (supportedVersion == gameVersion)
-                    return true;
-                else
-                    return false;
             }
             else
                 throw std::runtime_error("failed to get game version");
+
+            return gameVersion;
         }
 
         // Check if the game window is activated
