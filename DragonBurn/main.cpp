@@ -1,4 +1,4 @@
-﻿//______                            ______                  
+//______                            ______                  
 //|  _  \\                           | ___ \\                 
 //| | | |_ __ __ _  __ _  ___  _ __ | |_/ /_   _ _ __ _ __  
 //| | | | '__/ _` |/ _` |/ _ \\| '_ \\| ___ \\ | | | '__| '_ \\ 
@@ -82,7 +82,6 @@ https://github.com/ByteCorum/DragonBurn
 
 		try
 		{
-			fs::create_directories(MenuConfig::path + "\\Data");
 			Log::Fine("Config folder connected: " + MenuConfig::path);
 		}
 		catch (std::exception error)
